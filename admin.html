@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>অ্যাডমিন প্যানেল</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700&family=Amiri+Quran&family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="assets/islamic.css">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/editor.css">
+<style>
+  :root {
+    --bg: #EEF1EE; --card: #ffffff; --line: #DCE4DF; --soft: #62736d;
+    --red: #C64756; --red-bg: #FBE9EB;
+    --shadow: 0 1px 3px rgba(16, 40, 36, .08);
+    --shadow-lg: 0 20px 48px rgba(16, 40, 36, .22);
+  }
+  @font-face { font-family: 'HS'; font-weight: 100 500; src: url(assets/fonts/hind-Regular.woff) format('woff'); }
+  @font-face { font-family: 'HS'; font-weight: 600 900; src: url(assets/fonts/hind-Bold.woff) format('woff'); }
+  * { font-weight: 700; }
+  * { font-family: 'HS', 'Hind Siliguri', 'Amiri', sans-serif; scrollbar-width: none; } *::-webkit-scrollbar { display: none; }
+  body { background: var(--bg); color: #16211e; min-height: 100vh; }
+  button { font: inherit; cursor: pointer; }
+  :focus-visible { outline: 2.5px solid var(--green); outline-offset: 2px; border-radius: 6px; }
+
+  /* ---------- login ---------- */
+  .login { display: none; min-height: 100vh; align-items: center; justify-content: center; padding: 20px;
+           background: radial-gradient(120% 120% at 20% 10%, #1f6a62 0%, #0d2b28 75%); }
+  body.locked .login { display: flex; }
+  body.locked .app { display: none; }
+  .login-box { background: #fff; width: 100%; max-width: 380px; border-radius: 20px; padding: 34px 28px; box-shadow: var(--shadow-lg); }
+  .login-box h1 { text-align: center; color: var(--green); font-size: 1.35rem; margin-bottom: 4px; }
+  .login-box .sub { text-align: center; color: var(--soft); font-size: .85rem; margin-bottom: 22px; }
+  .login-err { color: var(--red); font-size: .85rem; min-height: 1.2em; margin-bottom: 10px; }
+
+  /* ---------- layout ---------- */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { position: fixed; inset: 0 auto 0 0; width: 250px; z-index: 200; display: flex; flex-direction: column;
+             background: linear-gradient(180deg, var(--green), var(--green-dark)); color: var(--light); transition: transform .28s ease; }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 22px 20px; border-bottom: 1px solid rgba(238,238,238,.12); }
+  .brand-mark { width: 44px; height: 44px; border-radius: 12px; background: var(--light); color: var(--green);
+                display: flex; align-items: center; justify-content: center; font-size: 20px; flex: none; }
+  .brand b { display: block; font-size: 1.05rem; }
+  .brand small { opacity: .7; font-size: .75rem; }
+  .side-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+  .nav-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: none; border-radius: 12px;
+             background: transparent; color: inherit; font-weight: 600; font-size: .97rem; text-align: left; transition: background .2s; }
+  .nav-btn i { width: 20px; text-align: center; }
+  .nav-btn:hover { background: rgba(238,238,238,.1); }
+  .nav-btn.active { background: var(--light); color: var(--green); }
+  .nav-btn .pill { margin-left: auto; background: rgba(238,238,238,.18); padding: 1px 9px; border-radius: 20px; font-size: .75rem; }
+  .nav-btn.active .pill { background: rgba(24,77,71,.12); }
+  .side-foot { padding: 14px 12px; border-top: 1px solid rgba(238,238,238,.12); display: flex; flex-direction: column; gap: 8px; }
+  .side-link { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 10px; border: none;
+               background: rgba(238,238,238,.1); color: var(--light); text-decoration: none; font-weight: 600; font-size: .88rem; }
+  .side-link:hover { background: rgba(238,238,238,.2); }
+  .backdrop { position: fixed; inset: 0; background: rgba(10,25,22,.5); z-index: 190; display: none; }
+  .backdrop.show { display: block; }
+
+  .main { margin-left: 250px; flex: 1; min-width: 0; padding: 22px 26px 60px; }
+  .topbar { display: none; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line);
+            border-radius: 14px; padding: 10px 12px; margin-bottom: 16px; position: sticky; top: 8px; z-index: 80; box-shadow: var(--shadow); }
+  .hamburger { width: 40px; height: 40px; border: none; border-radius: 10px; background: var(--bg); color: var(--green); font-size: 1.05rem; }
+  .topbar-title { font-weight: 700; color: var(--green); }
+
+  .view { display: none; }
+  .view.active { display: block; animation: viewIn .3s ease; }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .page-head { margin-bottom: 18px; }
+  .page-head h1 { font-size: 1.55rem; color: var(--green); }
+  .page-head p { color: var(--soft); font-size: .92rem; margin-top: 2px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); }
+  .card h3 { font-size: 1.05rem; color: var(--green); margin-bottom: 2px; }
+  .card .hint { color: var(--soft); font-size: .84rem; margin-bottom: 16px; }
+  .two-col { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ---------- stats ---------- */
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
+  .stat.hero { background: linear-gradient(150deg, var(--green), #226b62); color: var(--light); border: none; }
+  .stat span { font-size: .85rem; color: var(--soft); font-weight: 600; }
+  .stat.hero span { color: #bfd8d3; }
+  .stat b { display: block; font-size: 2rem; margin-top: 4px; line-height: 1.1; }
+
+  .notice { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: #FFF6DD; border: 1px solid #F1DDA0; border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; color: #5b4a12; }
+  .notice i { font-size: 1.2rem; }
+  .notice span { flex: 1; min-width: 200px; line-height: 1.6; font-size: .92rem; }
+
+  .dist-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 6px; border: none; background: transparent;
+              border-bottom: 1px dashed var(--line); text-align: left; border-radius: 8px; }
+  .dist-row:last-child { border-bottom: none; }
+  .dist-row:hover { background: var(--bg); }
+  .dist-name { min-width: 110px; max-width: 40%; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 8px; border-radius: 20px; background: var(--bg); overflow: hidden; }
+  .bar-fill { display: block; height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--green), #2f8f84); }
+
+  /* ---------- forms ---------- */
+  .field { margin-bottom: 14px; } .chk-line { display: flex; gap: 8px; align-items: center; font-size: .88rem; font-weight: 600; margin: 4px 0 12px; } .chk-line input { width: 18px; height: 18px; }
+  .field label { display: block; font-size: .82rem; font-weight: 700; color: var(--soft); margin-bottom: 6px; }
+  input[type=text], input[type=email], input[type=password], select, textarea {
+    width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 11px; background: #F6F8F6;
+    font-size: .95rem; color: #16211e; outline: none; transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(24,77,71,.14); background: #fff; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 12px; padding: 12px 20px;
+         font-weight: 700; font-size: .95rem; transition: filter .15s, transform .1s; }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-primary { background: var(--green); color: var(--light); }
+  .btn-primary:hover { filter: brightness(1.15); }
+  .btn-ghost { background: var(--bg); color: #16211e; border: 1px solid var(--line); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-warn { background: #B8934A; color: #fff; }
+  .btn-block { width: 100%; }
+
+  .preview-label { font-size: .78rem; font-weight: 700; color: var(--soft); margin: 4px 0 8px; }
+  .preview { background: #0E4D3A; border: 1px dashed var(--line); border-radius: 14px; padding: 16px; display: flex; justify-content: center; margin-bottom: 16px; }
+  .preview * { pointer-events: none; }
+  .preview .p-btn { width: 100%; max-width: 360px; animation: none; }
+  .preview .p-card { flex: 0 0 190px; animation: none; }
+  .urow { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; background: #fff; cursor: pointer; transition: .2s; }
+  .urow:hover { border-color: var(--green); box-shadow: var(--shadow); }
+  .uav { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #2A1D04; background: #E2BE63; overflow: hidden; position: relative; }
+  .uav em { font-style: normal; }
+  .uav img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .urow b { display: block; } .urow small { color: var(--soft); word-break: break-all; }
+  .utag { display: inline-block; font-size: .74rem; padding: 2px 9px; border-radius: 99px; background: #E8F3F0; color: var(--green); font-weight: 600; margin-left: 4px; }
+  .rrow { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .92rem; }
+  .rrow small { color: var(--soft); display: block; }
+  .lockbox { text-align: center; }
+  .lockbox p { color: var(--soft); line-height: 1.7; margin-bottom: 14px; font-size: .92rem; }
+  .lockbox code { background: #EEF1EE; padding: 2px 7px; border-radius: 6px; word-break: break-all; }
+
+  /* ---------- list items ---------- */
+  .item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; background: #fff; }
+  .item-num { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--green); color: var(--light); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .item-main { flex: 1; min-width: 0; }
+  .item-main b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-main span { display: block; color: var(--soft); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-actions { display: flex; gap: 6px; flex: none; }
+  .item-actions button .hx { display: none; } .item-actions button.on { background: var(--gold-l) !important; border-color: var(--gold) !important; }
+  .item.is-hidden { opacity: .62; border-style: dashed; } .hid-tag { font-style: normal; font-size: .7rem; background: var(--gold-l); color: var(--green); padding: 1px 8px; border-radius: 99px; margin-left: 6px; }
+  .item-actions button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: #16211e; }
+  .item-actions button:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+  .item-actions button:disabled { opacity: .35; cursor: default; }
+  .item-actions button.danger { background: var(--red-bg); color: var(--red); border-color: transparent; }
+  .item-actions button.danger:hover { background: var(--red); color: #fff; }
+
+  .empty { text-align: center; padding: 38px 16px; color: var(--soft); }
+  .empty i { font-size: 2rem; color: var(--line); margin-bottom: 10px; display: block; }
+  .empty b { display: block; color: #16211e; margin-bottom: 3px; }
+
+
+  /* ---------- modal ---------- */
+  .modal-overlay { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 18px;
+                   background: rgba(10,25,22,.55); backdrop-filter: blur(3px); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; width: 100%; max-width: 560px; max-height: 94vh; border-radius: 20px; box-shadow: var(--shadow-lg);
+           display: flex; flex-direction: column; overflow: hidden; animation: pop .22s ease; }
+  .modal.small { max-width: 400px; }
+  .modal.wide { max-width: 800px; }
+  @keyframes pop { from { opacity: 0; transform: scale(.95) translateY(8px); } to { opacity: 1; transform: none; } }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .modal-head h2 { font-size: 1.1rem; color: var(--green); }
+  .modal-x { width: 34px; height: 34px; border: none; border-radius: 9px; background: var(--bg); }
+  .modal-body { padding: 20px; overflow-y: auto; }
+  .modal-foot { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--line); }
+
+  /* ---------- toast ---------- */
+  .toast-stack { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+  .toast { display: flex; align-items: center; gap: 10px; min-width: 220px; padding: 13px 18px; border-radius: 12px; background: #16211e; color: #fff;
+           font-size: .9rem; box-shadow: var(--shadow-lg); animation: tin .25s ease; }
+  .toast.out { opacity: 0; transform: translateX(24px); transition: .22s; }
+  @keyframes tin { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+  .toast.success i { color: #5fd08d; } .toast.error i { color: #ff8a80; } .toast.info i { color: #e9c46a; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1060px) { .two-col { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); box-shadow: var(--shadow-lg); }
+    .sidebar.open { transform: none; }
+    .main { margin-left: 0; padding: 12px 14px 80px; }
+    .topbar { display: flex; }
+  }
+  @media (max-width: 560px) {
+    input[type=text], input[type=email], input[type=password], select, textarea { font-size: 16px; }
+    .row2 { grid-template-columns: 1fr; }
+    .modal-overlay { align-items: flex-end; padding: 0; }
+    .modal { max-width: 100%; border-radius: 18px 18px 0 0; }
+    .item { flex-wrap: wrap; }
+    .item-actions { width: 100%; justify-content: flex-end; }
+  }
+
+  .preview a, .preview a * { text-decoration: none !important; }
+  /* ================= theme: green / gold / white (matches the website) ================= */
+  :root { --bg: color-mix(in srgb, var(--c4) 86%, var(--c3)); --card: color-mix(in srgb, var(--c4) 40%, #fff); --line: color-mix(in srgb, var(--c4) 68%, var(--c3)); --soft: color-mix(in srgb, var(--c2) 45%, #6b6b6b);
+          --green: var(--c2); --green-dark: var(--deep); --light: var(--card); --gold: var(--c3); --gold-d: color-mix(in srgb, var(--c3) 70%, #000); --gold-l: color-mix(in srgb, var(--c3) 38%, #fff);
+          --red: color-mix(in srgb, var(--c3) 55%, #000); --red-bg: var(--pale); --shadow: 0 3px 0 color-mix(in srgb, var(--c3) 30%, transparent); }
+  body { background: var(--bg); }
+  .sidebar { background: var(--deep); border-right: 4px double var(--gold); }
+  .brand { padding: 18px 20px; border-bottom: 1px solid color-mix(in srgb, var(--c3) 40%, transparent); }
+  .brand small { color: var(--gold-l); opacity: .9; }
+  .nav-btn:hover { background: color-mix(in srgb, var(--c3) 16%, transparent); }
+  .nav-btn.active { background: var(--gold); color: var(--deep); }
+  .nav-btn .pill { background: color-mix(in srgb, var(--c3) 28%, transparent); } .nav-btn.active .pill { background: color-mix(in srgb, var(--deep) 16%, transparent); }
+  .side-foot { border-top: 1px solid color-mix(in srgb, var(--c3) 40%, transparent); }
+  .side-link { background: color-mix(in srgb, var(--c3) 16%, transparent); color: var(--gold-l); } .side-link:hover { background: color-mix(in srgb, var(--c3) 30%, transparent); }
+  .topbar { border: 2px solid var(--line); } .hamburger { background: var(--bg); }
+  .page-head h1 { color: var(--green); display: inline-block; padding-bottom: 4px; border-bottom: 4px solid var(--gold); }
+  .page-head p { margin-top: 8px; max-width: 70ch; line-height: 1.6; }
+  .card { border: 2px solid var(--line); border-radius: 20px; }
+  .card h3 { display: flex; align-items: center; gap: 8px; } .card h3 i { color: var(--gold-d); }
+  .stat { border: 2px solid var(--line); box-shadow: var(--shadow); }
+  .stat.hero { background: var(--green); border: 2px solid var(--gold); } .stat.hero span { color: var(--gold-l); }
+  .bar-fill { background: var(--gold); }
+  input[type=text], input[type=email], input[type=password], input[type=url], input[type=search], select, textarea {
+    width: 100%; padding: 11px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); font-size: .95rem; color: #16211e; outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c3) 25%, transparent); background: #fff; }
+  .btn { border-radius: 14px; }
+  .btn-primary { background: var(--green); color: #fff; box-shadow: 0 4px 0 var(--deep); } .btn-primary:hover { filter: none; background: color-mix(in srgb, var(--c2) 85%, #fff); } .btn-primary:active { box-shadow: 0 1px 0 var(--deep); transform: translateY(3px); }
+  .btn-ghost { background: #fff; border: 2px solid var(--line); }
+  .btn-danger { background: var(--red); color: #fff; } .btn-warn { background: var(--gold); color: var(--deep); }
+  .item { border: 2px solid var(--line); background: #fff; }
+  .item-num { background: var(--green); color: var(--gold-l); border-radius: 50%; }
+  .item-actions button { border: 2px solid var(--line); background: #fff; } .item-actions button:hover:not(:disabled) { border-color: var(--gold); color: var(--green); background: var(--gold-l); }
+  .urow { border: 2px solid var(--line); } .urow:hover { border-color: var(--gold); }
+  .utag { background: var(--gold-l); color: var(--deep); }
+  .modal { border: 3px solid var(--gold); } .modal-head h2 { color: var(--green); }
+  .toast { background: var(--deep); border: 2px solid var(--gold); } .toast.error i { color: var(--gold-l); }
+  .login { background: var(--deep); }
+  .notice { background: var(--pale); border: 2px solid var(--gold-l); }
+  .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .crumbs button { border: 2px solid var(--line); background: #fff; border-radius: 99px; padding: 6px 14px; font-weight: 600; color: var(--green); }
+  .crumbs button:hover { border-color: var(--gold); background: var(--gold-l); }
+  .crumbs button.cur { background: var(--green); color: var(--gold-l); border-color: var(--green); cursor: default; }
+  .crumbs i { color: var(--gold-d); font-size: .75rem; }
+  .rule { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--pale); border: 1px dashed var(--gold); color: color-mix(in srgb, var(--c3) 40%, #000); font-size: .88rem; line-height: 1.6; } .rule i { color: var(--gold-d); }
+  .where { display: block; margin-top: 5px; font-size: .78rem; color: color-mix(in srgb, var(--c3) 45%, #000); line-height: 1.5; } .where i { color: var(--gold-d); }
+  .set-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: start; }
+  .savebar { grid-column: 1 / -1; position: sticky; bottom: 0; z-index: 20; display: flex; gap: 10px; flex-wrap: wrap; padding: 12px 0; background: linear-gradient(transparent, var(--bg) 40%); }
+  .lab-group { margin-bottom: 18px; } .lab-group h3 { margin-bottom: 12px; }
+  .lab-row { padding: 12px 0; border-top: 1px dashed var(--line); } .lab-row:first-of-type { border-top: 0; padding-top: 0; }
+  .lab-row label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .9rem; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+  .lab-row .tag { font-size: .7rem; font-weight: 600; background: var(--gold-l); color: color-mix(in srgb, var(--c3) 40%, #000); padding: 1px 9px; border-radius: 99px; }
+  .lab-row .def { font-size: .74rem; color: var(--soft); font-weight: 500; }
+  .lab-row .ctl { display: flex; gap: 8px; } .lab-row .ctl button { flex: none; width: 42px; border: 2px solid var(--line); border-radius: 12px; background: #fff; color: var(--soft); }
+  .lab-row .ctl button:hover { border-color: var(--gold); background: var(--gold-l); }
+  .lab-row.changed input { border-color: var(--gold); background: var(--pale); }
+  .pal-auto { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; margin-bottom: 14px; border: 2px dashed var(--gold); border-radius: 14px; background: var(--pale); cursor: pointer; } .pal-auto input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--green); flex: none; } .pal-auto b { display: block; color: var(--green); } .pal-auto small { display: block; color: var(--soft); line-height: 1.5; margin-top: 2px; }
+  .pal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .pal-box { position: relative; padding: 8px 8px 10px; border: 3px solid var(--line); border-radius: 18px; background: #fff; cursor: pointer; transition: transform .15s, border-color .15s; }
+  .pal-box:hover { transform: translateY(-2px); border-color: var(--gold); }
+  .pal-box.on { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-l); }
+  .pal-sw { display: flex; height: 56px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,.12); } .pal-sw i { flex: 1; display: block; }
+  .pal-sw.big { height: 74px; border-radius: 16px; margin-top: 6px; }
+  .pal-cap { display: block; margin-top: 8px; text-align: center; font-size: .8rem; color: var(--soft); font-weight: 600; } .pal-box.on .pal-cap { color: var(--green); }
+  .pal-x { position: absolute; top: -9px; right: -9px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line); background: #fff; color: var(--soft); display: grid; place-items: center; cursor: pointer; font-size: .8rem; }
+  .pal-x:hover { background: var(--red); color: #fff; border-color: var(--red); }
+  .pal-ins { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 18px; }
+  .pal-ins input[type=color] { width: 100%; height: 46px; padding: 3px; border: 2px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; }
+  .pill-n { font-size: .75rem; background: var(--gold-l); color: var(--green); padding: 1px 10px; border-radius: 99px; margin-left: 4px; }
+  /* ================= NEW: admin = the website inside ================= */
+  .nav-group { margin: 14px 8px 4px; font-size: .72rem; letter-spacing: .04em; color: var(--gold-l); opacity: .85; font-weight: 600; }
+  .nav-add { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 0; padding: 9px; border: 2px dashed color-mix(in srgb, var(--c3) 55%, transparent); border-radius: 12px; background: transparent; color: var(--gold-l); font-weight: 600; font-size: .86rem; }
+  .nav-add:hover { background: color-mix(in srgb, var(--c3) 16%, transparent); }
+  .nav-add[hidden] { display: none; }
+  .crumbs { margin-bottom: 14px; }
+  .stage { border: 3px solid var(--gold); border-radius: 26px; background: var(--c1); padding: 22px 16px 26px; margin-bottom: 18px; position: relative; box-shadow: var(--shadow); }
+  .stage-tag { position: absolute; top: -13px; left: 20px; padding: 2px 14px; border-radius: 99px; background: var(--gold); color: var(--deep); font-size: .76rem; font-weight: 700; }
+  .stage-in { max-width: 430px; margin: 0 auto; }
+  .stage a { text-decoration: none; } .stage { font-weight: 700; --W: min(430px, 100vw - 64px); }
+  .ad-it { position: relative; }
+  .ad-it .ad-open { cursor: pointer; display: block; border-radius: calc(var(--p) * 3.31); }
+  .ad-it.is-hidden { opacity: .55; } .ad-it.is-hidden .ad-open { filter: grayscale(.6); }
+  .ad-it .ad-open > * { pointer-events: none; } .ad-it .ad-open .p-chk { pointer-events: none; }
+  .ad-it { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; } .ad-it .ad-open { flex: 1; min-width: 0; }
+  .ad-cust { flex: none; height: 32px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 99px; background: #fff; color: #103C4A; font: 700 .8rem 'Hind Siliguri', sans-serif; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; } .ad-cust:hover { background: #e9f0f2; }
+  .cust-bar { margin: 0 0 12px; }
+  .ad-it .ad-body { flex: 1; min-width: 0; } .stage .p-stack.ico .ad-it { padding: 0; } .stage .ad-it > .ad-cust { margin-right: 4px; }
+  .stage .p-info .rows .vv { display: block; padding: 0 .2em; word-break: break-word; }
+  @media (min-width: 760px) { .stage .ad-it.side { display: block; } .stage .ad-it.side > .ad-cust { position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); margin: 0; } }
+  .ad-tools { display: none; flex-basis: 100%; justify-content: flex-end; gap: 6px; margin: 8px 4px 0; flex-wrap: wrap; }
+  .ad-tools button { height: 34px; min-width: 34px; padding: 0 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff; color: #16211e; font-size: .8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .ad-tools button:hover:not(:disabled) { border-color: var(--gold); background: var(--gold-l); } .ad-tools button:disabled { opacity: .35; cursor: default; }
+  .ad-tools button.on { background: var(--gold-l); border-color: var(--gold); }
+  .ad-tools button.danger { background: var(--red-bg); color: var(--red); } .ad-tools button.danger:hover:not(:disabled) { background: var(--red); color: #fff; border-color: var(--red); }
+  .ad-add { margin-top: 22px; padding: 16px; border: 3px dashed var(--gold); border-radius: 22px; background: color-mix(in srgb, var(--c4) 92%, transparent); color: var(--ink); }
+  .ad-add h4 { margin: 0 0 10px; color: var(--green); display: flex; align-items: center; gap: 8px; }
+  .ad-add .row2 { align-items: end; } .ad-add .field { margin-bottom: 10px; }
+  .ad-soon { text-align: center; padding: 26px 16px; border-radius: 22px; background: var(--cream); color: var(--ink); border: 3px solid var(--gold); border-style: dashed; }
+  .ad-soon i { font-size: 1.8rem; color: var(--gold-d); display: block; margin-bottom: 6px; } .ad-soon b { display: block; font-size: 1.05rem; color: var(--green); }
+  .stage .p-info .rows > div { grid-template-columns: calc(var(--p) * 22.9) 1fr; }
+  .stage .p-info input { width: 100%; height: calc(var(--p) * 4.4); padding: 0 .6em; border: 0; border-radius: calc(var(--p) * .8); background: var(--c4); color: var(--c2); font: inherit; font-size: calc(var(--p) * 2.5); font-weight: 700; }
+  .stage .p-info .rows span { white-space: normal; }
+  .stage .p-bar { border-radius: calc(var(--p) * 3.31) calc(var(--p) * 3.31) 0 0; margin-bottom: calc(var(--p) * 3); }
+  .stage .p-fil { cursor: default; } .stage .p-fil * { pointer-events: none; }
+  .stage .p-btn.sel { outline: 4px solid var(--c3); outline-offset: 3px; }
+  .stage .p-btn.has small { color: #fff; font-weight: 600; }
+  .edit-card { margin-bottom: 18px; } .edit-card .row2 { align-items: end; }
+  .edit-card .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .res-card h3 { margin-bottom: 6px; } .res-card .hint { margin-bottom: 12px; }
+  .up-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; } .up-row input[type=file] { flex: 1; min-width: 200px; padding: 9px; }
+  .up-prog { height: 10px; border-radius: 99px; background: var(--bg); overflow: hidden; margin-top: 8px; display: none; } .up-prog i { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s; }
+  .tag-ok { display: inline-block; font-size: .74rem; padding: 2px 10px; border-radius: 99px; background: var(--gold-l); color: var(--deep); font-weight: 700; }
+  .help-steps { margin: 0 0 14px; padding: 12px 14px 12px 34px; border-radius: 14px; background: var(--pale); border: 2px dashed var(--gold); color: var(--ink); line-height: 1.7; font-size: .88rem; }
+  .stash { display: none; }
+  .stage .p-gr .ad-it { padding: 0 0 6px; } .stage .p-gr .ad-it .ad-open { border-radius: 0; }
+  .stage .p-gr .p-chk { pointer-events: none; } .stage .p-gr-row { border-top: 0; } .stage .p-gr h3.nameless { opacity: .6; font-size: 1rem; }
+  .stage .p-gr .ad-tools { margin: 0 10px; }
+  .ad-it.cust > .ad-tools { display: flex; }
+  .stage .ad-grtools { display: none; } .stage.cust-on .ad-grtools { display: flex; }
+  .stage .p-gr .ad-it { padding: 0 8px 6px 0; } .stage .p-gr .ad-cust { margin-right: 8px; }
+  .ad-grtools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 8px 10px; background: var(--pale); color: var(--ink); font-size: .8rem; font-weight: 700; }
+  .ad-grtools button { height: 30px; padding: 0 10px; border: 2px solid var(--line); border-radius: 9px; background: #fff; font-size: .78rem; font-weight: 600; } .ad-grtools button:hover:not(:disabled) { border-color: var(--gold); background: var(--gold-l); } .ad-grtools button:disabled { opacity: .35; }
+  @media (max-width: 560px) { .stage { padding: 20px 10px 22px; } }
+  /* ---- "কাস্টম" side buttons always sit OUTSIDE the box ---- */
+  .ad-it { display: block !important; position: relative; padding: 0 !important; }
+  .ad-it > .ad-cust { position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); margin: 0 !important; z-index: 3; white-space: nowrap; }
+  .stage .p-gr, .stage .p-card { overflow: visible; }
+  .stage .p-gr > h3 { border-radius: calc(var(--p) * 3.31) calc(var(--p) * 3.31) 0 0; }
+  .stage .p-gr .ad-it .ad-open { border-radius: 0; }
+  .stage .p-gr .ad-tools { margin: 4px 10px 8px; }
+  .stage .p-gr .ad-it > .ad-cust { top: 50%; }
+  .stage-note { text-align: center; margin: 18px 0 12px; font-size: .86rem; color: var(--soft); font-weight: 700; }
+  .add-bar { margin: 0 0 18px; } .btn-add { width: 100%; max-width: 430px; margin: 0 auto; display: flex; padding: 15px 20px; font-size: 1.05rem; }
+  .tocm-list { max-height: 54vh; overflow: auto; border: 1px solid var(--line); border-radius: 12px; padding: 6px 4px; }
+  .tocm-list label { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; border-radius: 8px; cursor: pointer; line-height: 1.5; } .tocm-list label:hover { background: var(--pale); }
+  .tocm-list label span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .tocm-list label.l2 { margin-left: 28px; font-size: .92rem; } .tocm-list label.l1 { font-weight: 700; }
+  .tocm-list input { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--green); }
+  .hint, .where, .def, .notice, .help-steps, .page-head p { display: none !important; }
+  .ed { margin-top: 10px; }
+  .stage { border-width: 1.5px; }
+
+  /* ===== v10: info box editing, previews, tidy ===== */
+  .stage .p-info.editing .rows > div { grid-template-columns: calc(var(--p) * 21) 1fr; gap: calc(var(--p) * 1); align-items: center; padding-top: calc(var(--p) * .7); padding-bottom: calc(var(--p) * .7); }
+  .stage .p-info.editing .rows > .exr { grid-template-columns: calc(var(--p) * 22.9) 1fr calc(var(--p) * 4.4); }
+  .stage .p-info.editing .rows > div > span:not(:has(input)) { font-size: calc(var(--p) * 2.4); }
+  .stage .p-info > h3 input { height: calc(var(--p) * 4.2); width: calc(100% - 1px); background: rgba(221,222,221,.14); color: var(--c4); box-shadow: inset 0 0 0 1px rgba(221,222,221,.3); font-size: calc(var(--p) * 2.78); }
+  .stage .p-info.editing .rows > div > span input { background: rgba(221,222,221,.14); color: var(--c4); box-shadow: inset 0 0 0 1px rgba(221,222,221,.3); }
+  .stage .p-info select { width: 100%; height: calc(var(--p) * 4.4); border: 0; border-radius: calc(var(--p) * .8); background: var(--c4); color: var(--c2); font: inherit; font-size: calc(var(--p) * 2.3); font-weight: 700; padding: 0 .4em; }
+  .exr-del { width: calc(var(--p) * 4.4); height: calc(var(--p) * 4.4); border: 0; border-radius: calc(var(--p) * .8); background: rgba(221,222,221,.18); color: var(--c4); display: grid; place-items: center; font-size: calc(var(--p) * 2.2); }
+  .exr-del:hover { background: var(--red); color: #fff; }
+  .stage .p-info .rows > .exr-add { display: block; padding: calc(var(--p) * .8) calc(var(--p) * 3) calc(var(--p) * 1.2); border-top: 0; min-height: 0; }
+  .exr-add .btn { width: 100%; background: transparent; color: var(--c4); border: 1.5px dashed rgba(221,222,221,.55); border-radius: calc(var(--p) * 1.4); padding: calc(var(--p) * 1.2) 0; font-size: calc(var(--p) * 2.4); }
+  .exr-add .btn:hover { background: rgba(221,222,221,.12); }
+  .stage .p-info .rows > .ao-h { display: flex; align-items: center; gap: calc(var(--p) * 1); min-height: 0; margin-top: calc(var(--p) * .6); padding-top: calc(var(--p) * 1.4); padding-bottom: calc(var(--p) * .4); font-size: calc(var(--p) * 2.1); color: var(--c3); border-top: calc(var(--p) * .25) dashed var(--c3); }
+  .info-save { display: flex; gap: 10px; justify-content: center; margin: 16px 0 4px; }
+  .inline { display: flex; gap: 8px; } .inline select { flex: 1; min-width: 0; }
+  .pv { --W: 230px; --p: calc(var(--W) / 83.32); position: relative; width: 230px; height: 158px; flex: none; border-radius: 16px; overflow: hidden; background: var(--c1); box-shadow: 0 0 0 1.5px var(--line), 0 6px 16px rgba(16,40,36,.12); pointer-events: none; font-weight: 700; color: var(--c4); }
+  .pv * { pointer-events: none; }
+  .pv-scr { position: absolute; inset: 0; background: var(--c1); }
+  .pv-top { height: calc(var(--p) * 10); background: var(--c2); display: flex; align-items: center; gap: calc(var(--p) * 2); padding: 0 calc(var(--p) * 2.4); font-size: calc(var(--p) * 3.6); line-height: 1; }
+  .pv-top i { width: calc(var(--p) * 5); height: calc(var(--p) * 5); border-radius: 50%; background: var(--c4); flex: none; }
+  .pv-top b { flex: 1; text-align: center; padding-right: calc(var(--p) * 5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pv-body { padding: calc(var(--p) * 3) calc(var(--p) * 2.6); }
+  .pv .p-gr, .pv .p-card { animation: none; opacity: 1; transform: none; margin: 0; }
+  .pv .p-stack { gap: calc(var(--p) * 1.4); }
+  .pv .p-btn { animation: none; opacity: 1; transform: none; min-height: calc(var(--p) * 6.2); }
+  .pv .p-fulltext { padding: calc(var(--p) * 2.6); font-size: calc(var(--p) * 3); }
+  .pv-doc { background: var(--c2); border-radius: calc(var(--p) * 3); padding: calc(var(--p) * 3); display: grid; gap: calc(var(--p) * 1.3); }
+  .pv-doc b { height: calc(var(--p) * 3); width: 60%; border-radius: 99px; background: var(--c4); }
+  .pv-doc i { height: calc(var(--p) * 1.6); border-radius: 99px; background: rgba(221,222,221,.55); } .pv-doc i.s { width: 70%; }
+  .pv .s1 { animation: pvA 7.5s infinite; } .pv .s2 { animation: pvB 7.5s infinite; }
+  .pv .s1 .p-gr-row:first-of-type { animation: pvT 7.5s infinite; }
+  .pv-cur { position: absolute; left: 0; top: 0; width: 20px; height: 20px; margin: -4px 0 0 -4px; border-radius: 50%; background: rgba(255,255,255,.96); border: 2.5px solid var(--c3); box-shadow: 0 2px 8px rgba(0,0,0,.4); animation: pvC 7.5s infinite; opacity: 0; }
+  @keyframes pvA { 0%, 40% { opacity: 1; } 44%, 96% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes pvB { 0%, 40% { opacity: 0; transform: translateY(8px); } 47%, 92% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+  @keyframes pvT { 0%, 30% { background: transparent; } 35% { background: rgba(221,222,221,.28); } 42%, 100% { background: transparent; } }
+  @keyframes pvC { 0% { opacity: 0; transform: translate(200px, 140px); } 6% { opacity: 1; transform: translate(200px, 140px); } 28% { opacity: 1; transform: translate(120px, 70px); } 33% { transform: translate(120px, 70px) scale(.72); } 38% { opacity: 1; transform: translate(120px, 70px) scale(1); } 45%, 100% { opacity: 0; transform: translate(120px, 70px); } }
+  .add-tiles { display: grid; gap: 12px; }
+  .add-tile { display: flex; gap: 18px; align-items: center; text-align: left; padding: 12px; border: 2px solid var(--line); border-radius: 20px; background: #fff; cursor: pointer; font-family: inherit; transition: border-color .15s, background .15s, transform .12s; }
+  .add-tile:hover, .add-tile:focus-visible { border-color: var(--green); background: #F4F8F6; } .add-tile:active { transform: scale(.99); }
+  .at-txt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .at-txt b { font-size: 1.05rem; color: var(--green); } .at-txt small { color: var(--soft); font-size: .86rem; line-height: 1.5; display: block !important; }
+  .at-txt em { font-style: normal; font-weight: 700; font-size: .84rem; color: var(--green); margin-top: 2px; }
+  .pv-one { display: flex; gap: 14px; align-items: center; margin-bottom: 16px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: #F6F8F6; } .pv-one > span { font-size: .86rem; line-height: 1.5; color: var(--soft); font-weight: 600; }
+  .modal-overlay .modal { max-width: 640px; }
+  @media (max-width: 560px) { .add-tile, .pv-one { flex-direction: column; align-items: stretch; } .pv { margin: 0 auto; } }
+  .lab-card > summary { cursor: pointer; font-weight: 700; color: var(--green); font-size: 1.02rem; list-style: none; display: flex; gap: 8px; align-items: center; } .lab-card > summary::-webkit-details-marker { display: none; }
+  .lab-card[open] > summary { margin-bottom: 14px; }
+  .lab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 14px; }
+  .pv a { text-decoration: none !important; color: inherit !important; } .pv { height: 140px; }
+
+  /* ===== v11: the page edit panel, live pages, typing in place ===== */
+  .stage { --W: min(430px, 100vw - 60px); --p: calc(var(--W) / 83.32); padding: 28px 16px 34px; }
+  .stage-tag { display: none; }
+  .stage-in { max-width: var(--W); }
+  .ph { position: relative; width: var(--W); max-width: 100%; margin: 0 auto; background: var(--c1); border-radius: calc(var(--p) * 4); box-shadow: 0 10px 28px rgba(16,40,36,.16), 0 0 0 1px rgba(16,40,36,.1); }
+  .ph > .p-top { border-radius: calc(var(--p) * 4) calc(var(--p) * 4) 0 0; }
+  .stage .ph > .p-bar { border-radius: 0; margin: 0; }
+  .ph .p-wrap { padding: calc(var(--p) * 7) calc(var(--p) * 5) calc(var(--p) * 8); }
+  .ph .p-stack { gap: calc(var(--p) * 4); }
+  .ph .p-stack.btns { gap: calc(var(--p) * 2.6); }
+  .ph .p-stack.ico { gap: calc(var(--p) * 2); }
+  .ph .p-back { position: absolute; left: calc(var(--p) * 3.1); top: 50%; transform: translateY(-50%); }
+  .ie { outline: none; cursor: text; border-radius: .22em; padding: 0 .12em; margin: 0 -.12em; transition: background .12s, box-shadow .12s; }
+  .ie:hover { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c3) 90%, transparent); }
+  .ie:focus { background: color-mix(in srgb, var(--c3) 32%, transparent); box-shadow: 0 0 0 2px var(--c3); }
+  .ie:empty::before { content: attr(data-ph); opacity: .5; font-weight: 600; }
+  .ie.ae:empty { display: inline-block; min-width: 5em; }
+  .ad-it.cust .ad-open .ie { pointer-events: auto; }
+  .ad-it.cust .p-gr-row .p-t { white-space: normal; overflow: visible; text-overflow: clip; }
+  .ad-it.sel .p-gr-row { background: color-mix(in srgb, var(--c3) 24%, transparent); }
+  .ad-it.sel > .ad-tools { display: none !important; }
+  .stage .p-fil .ie { pointer-events: auto; }
+  .stage .p-info .rows .vv { display: flex; }
+  .stage .p-info .rows > div.emp > span { opacity: .55; }
+  .stage .p-info .rows > .exr { grid-template-columns: calc(var(--p) * 22.9) 1fr calc(var(--p) * 4.4); align-items: center; }
+  .stage .p-info .rows > .exr-add { border-top: 0; }
+  .stage .p-btn.off { opacity: .5; }
+  .stage .p-gr { position: relative; }
+  .stage .ad-grtools { display: flex; flex-direction: column; gap: 6px; position: absolute; left: calc(100% + 10px); top: 4px; z-index: 4; padding: 0; background: none; }
+  .stage .ad-grtools button { width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; color: var(--green); display: grid; place-items: center; }
+  .ep { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 10px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .ep-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ep-sp { flex: 1; }
+  .ep-b { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; color: #16211e; font-weight: 700; font-size: .9rem; }
+  .ep-b:hover:not(:disabled) { border-color: var(--c3); background: var(--gold-l); }
+  .ep-b.prim { background: var(--green); border-color: var(--green); color: #fff; } .ep-b.prim:hover { background: var(--green); filter: brightness(1.15); }
+  .ep-b.danger { background: var(--red-bg); color: var(--red); } .ep-b.warn { background: var(--gold-l); } .ep-b:disabled { opacity: .4; cursor: default; }
+  .ep-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0 16px; padding: 16px 4px 4px; margin-top: 10px; border-top: 1px solid var(--line); }
+  .ep-body .btn-row { grid-column: 1 / -1; }
+  .chips, .ac-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .chip { border: 1.5px solid var(--line); background: #fff; color: var(--green); border-radius: 99px; padding: 5px 13px; font-size: .84rem; font-weight: 700; }
+  .chip:hover { background: var(--gold-l); border-color: var(--c3); }
+  .ph-add { --W: min(380px, 100vw - 80px); --p: calc(var(--W) / 83.32); display: flex; flex-direction: column; align-items: center; gap: 12px; font-weight: 700; }
+  .ph-add .ph { width: var(--W); }
+  .ph-add .ph .p-wrap { padding: calc(var(--p) * 4.5) calc(var(--p) * 4.5) calc(var(--p) * 5); }
+  .ph-add .p-gr-row.old { opacity: .5; }
+  .ph-add .p-chk { background: var(--c4); }
+  .ph-add .p-btn.new { cursor: text; }
+  .ac-arrow { color: var(--soft); font-size: 1.1rem; }
+  .ac-chips { justify-content: center; margin-top: 12px; }
+  .add-go { width: 100%; margin-top: 18px; }
+  @media (max-width: 560px) { .ep-b span { display: none; } .ep-b.prim span { display: inline; } .ep-b { padding: 0 13px; } }
+
+
+  .lab-pages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 28px 22px; align-items: start; }
+  .lab-pg { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+  .lab-name { font-weight: 800; color: var(--green); font-size: .95rem; }
+  .lab-pg .ph { --W: min(360px, 100vw - 56px); --p: calc(var(--W) / 83.32); width: var(--W); overflow: hidden; }
+  .lab-pg .ph-in .p-top { position: relative; }
+  .lab-pg .p-wrap { display: flex; flex-direction: column; gap: calc(var(--p) * 3); }
+  .lab-pg .p-bar { position: relative; }
+  .lab-pg .p-fil { cursor: default; }
+  .lab-msg, .lab-tip, .lab-cnt { text-align: center; font-weight: 700; font-size: calc(var(--p) * 2.8); color: var(--c1t, #103C4A); padding: calc(var(--p) * 1.6); border: 1.5px dashed rgba(16,60,74,.35); border-radius: calc(var(--p) * 2); }
+  .lab-cnt { background: var(--c2, #103C4A); color: var(--c4, #ddd); border: 0; }
+  .lab-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: calc(var(--p) * 4) 0; font-size: calc(var(--p) * 3.4); } .lab-empty small { font-size: calc(var(--p) * 2.6); opacity: .85; }
+  .lab-more { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; font-size: calc(var(--p) * 2.6); }
+  .lab-login { font-size: calc(var(--p) * 3); }
+  .lab-login small { text-align: center; font-size: calc(var(--p) * 2.5); opacity: .85; } .lab-h { text-align: center; font-size: calc(var(--p) * 4); }
+  .lab-tabs { display: flex; gap: 8px; justify-content: center; font-weight: 700; } .lab-tabs > span { padding: 4px 12px; border-radius: 99px; background: var(--c2, #103C4A); color: var(--c4, #ddd); }
+  .lab-in { padding: calc(var(--p) * 2); border: 1.5px solid rgba(16,60,74,.4); border-radius: calc(var(--p) * 1.6); background: #fff; color: #333; font-size: calc(var(--p) * 2.8); }
+  .lab-pg .p-gr-row .p-chk { pointer-events: none; }
+  .lab-adm { background: #0d2b33; color: #fff; border-radius: calc(var(--p) * 4); gap: calc(var(--p) * 2.4); font-size: calc(var(--p) * 3.2); } .lab-adm small { opacity: .7; font-size: calc(var(--p) * 2.6); }
+
+  /* ===== v12 ===== */
+  .ep-b { flex: none; justify-content: flex-start; }
+  .ep-body { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 22px; align-items: start; }
+  .ep-pv { display: flex; justify-content: center; padding: 14px; border-radius: 16px; background: var(--pale, #eef2f2); position: sticky; top: 10px; }
+  .ep-pv .ph { --W: min(300px, 100vw - 90px); --p: calc(var(--W) / 83.32); width: var(--W); }
+  .ep-pv .ph .p-wrap { padding: calc(var(--p) * 5); }
+  .ep-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; align-content: start; min-width: 0; }
+  .ep-fields .btn-row { grid-column: 1 / -1; }
+  @media (max-width: 820px) { .ep-body { grid-template-columns: minmax(0, 1fr); } .ep-pv { position: static; } }
+  /* edit buttons sit outside the page frame */
+  @media (min-width: 760px) {
+    .stage .ad-it.side > .ad-cust, .stage .ad-it > .ad-cust { left: calc(100% + var(--p) * 5 + 12px); }
+    .stage .p-gr .ad-it > .ad-cust { left: calc(100% + var(--p) * 9 + 12px); }
+    .stage .ad-grtools { left: auto; right: calc(100% + var(--p) * 5 + 12px); top: 2px; }
+  }
+  .ep-pv .ph, .lab-pg .ph { font-weight: 700; }
+  .lab-pages { align-items: stretch; } .lab-pg .ph-in { height: 100%; display: flex; flex-direction: column; } .lab-pg .ph-in > .p-wrap { flex: 1; }
+  .lab-pg .ph { flex: 1; }
+
+  /* ===== v13 ===== */
+  .ad-it .ad-open .ie { pointer-events: auto; }
+  .epi { outline: none; cursor: text; border-radius: .22em; padding: 0 .12em; margin: 0 -.12em; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c3) 70%, transparent); transition: background .12s, box-shadow .12s; min-width: 3em; display: inline-block; }
+  .epi:focus { background: color-mix(in srgb, var(--c3) 32%, transparent); box-shadow: 0 0 0 2px var(--c3); }
+  .epi:empty::before { content: attr(data-ph); opacity: .55; }
+  .ep-body { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .ep-pv { background: none; padding: 0; position: static; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+  .ep-pv .ph { --W: min(560px, 100vw - 90px); --p: calc(var(--W) / 83.32); }
+  .ep-pv .p-btn .p-t, .ep-pv .p-gr-row .p-t { white-space: normal; }
+  .ep-pv .p-gr h3.p-t { align-items: center; }
+  .ep-pv .p-btn { min-height: calc(var(--p) * 15); gap: 2px; } .ep-pv .p-btn small { line-height: 1.4; } .ep-pv .p-btn small .epi, .ep-pv .p-gr-row small .epi { min-width: 5em; }
+  .ep-pv .chips { justify-content: center; margin: 10px 0 0; }
+  .ep-pv .chip.on { background: var(--green); color: #fff; border-color: var(--green); }
+  .ep-sec { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ep-lab { font-weight: 700; font-size: .85rem; color: var(--soft); text-align: center; margin-top: 6px; }
+  .ep-foot { width: 100%; display: flex; justify-content: center; padding-top: 12px; border-top: 1px solid var(--line); }
+  .ad-tools { gap: 5px; margin: 6px 4px 2px; }
+  .ad-tools button { height: 26px; min-width: 26px; padding: 0 7px; border-width: 1.5px; border-radius: 8px; font-size: .72rem; justify-content: center; }
+  .stage .ad-grtools { top: 50%; transform: translateY(-50%); }
+  .res-ph { --W: min(380px, 100vw - 90px); --p: calc(var(--W) / 83.32); width: var(--W); margin: 0 auto; font-weight: 700; }
+  .res-ph .p-wrap { display: flex; flex-direction: column; gap: calc(var(--p) * 3); padding: calc(var(--p) * 5); }
+  .res-link { display: flex; align-items: center; gap: 8px; background: #fff; color: #16211e; border-radius: calc(var(--p) * 1.6); padding: calc(var(--p) * 1.8) calc(var(--p) * 2.2); font-size: calc(var(--p) * 2.8); word-break: break-all; }
+  .res-link .epi { flex: 1; min-width: 4em; }
+  .res-up { align-self: center; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; padding: 6px 16px; border-radius: 99px; border: 1.5px dashed currentColor; font-size: calc(var(--p) * 2.6); }
+  .res-body { display: flex; flex-direction: column; gap: calc(var(--p) * 2); padding: calc(var(--p) * 2.4); }
+  .res-ph .p-card h3 { color: var(--c4); }
+  .res-ph .p-top { border-radius: calc(var(--p) * 4) calc(var(--p) * 4) 0 0; }
+  .res-foot { justify-content: center; margin-top: 16px; }
+  .ed-pop { padding: 12px 14px 14px; border-bottom: 1px solid var(--line); background: #fff; }
+  .ed-pop-t { font-size: .85rem; margin-bottom: 10px; color: var(--soft); } .ed-pop-t b { color: var(--green); }
+  .ed-grid { display: grid; gap: 5px; width: 100%; }
+  .ed-grid i { height: 26px; border: 1.5px solid var(--line); border-radius: 5px; background: #fff; cursor: pointer; } .ed-grid i.on { background: var(--c3, #c9a24a); border-color: var(--c2, #103C4A); }
+  .ed-tb { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; padding: 12px; background: var(--gold-l); border-bottom: 1px solid var(--line); }
+  .ed-tbg { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 8px; }
+  .ed-tbg-t { font-size: .78rem; color: var(--soft); font-weight: 700; } .ed-tbg-b { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .ed-tbb { height: 32px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); border-radius: 9px; background: #fff; font-size: .78rem; }
+  .ed-tbb:hover { border-color: var(--c3); background: var(--gold-l); } .ed-tbb.bad { color: var(--red); }
+  .ed-seg { display: inline-flex; gap: 0; } .ed-seg .ed-tbb { border-radius: 0; margin-left: -1.5px; } .ed-seg .ed-tbb:first-child { border-radius: 9px 0 0 9px; margin: 0; } .ed-seg .ed-tbb:last-child { border-radius: 0 9px 9px 0; }
+  .ed-tb[hidden], .ed-pop[hidden] { display: none; }
+  .ed-area table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 0 0 1em; } .ed-area td { border: 1px dashed #7a8a8a; padding: .4em .6em; min-height: 1.6em; vertical-align: top; } .ed-area table[data-b="1"] td { border-style: solid; }
+  .ed-area { font-weight: 400; } .ed-area h1, .ed-area h2, .ed-area b { font-weight: 700; }
+  .ep-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; width: 100%; }
+  .ep-mode { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 14px 14px 12px 46px; min-height: 84px; border: 2px solid var(--line); border-radius: 16px; background: #fff; color: #16211e; transition: border-color .15s, background .15s, transform .12s; }
+  .ep-mode:hover { border-color: var(--c3); transform: translateY(-1px); }
+  .ep-mode.on { border-color: var(--green); background: var(--gold-l); box-shadow: 0 0 0 2px var(--green) inset; }
+  .ep-mode .no { position: absolute; left: 12px; top: 12px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: #fff; font-size: .8rem; }
+  .ep-mode > i { position: absolute; right: 12px; top: 12px; color: var(--soft); }
+  .ep-mode b { font-size: .95rem; } .ep-mode small { font-size: .78rem; color: var(--soft); line-height: 1.35; font-weight: 600; }
+  .ep-sec { width: 100%; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .pal-studio { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .pal-prevcard { background: var(--pale); }
+  .pal-pages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 16px; justify-items: center; }
+  @media (max-width: 560px) { .pal-pages { grid-template-columns: minmax(0, 1fr); } }
+  .pal-pages .ph { --W: min(250px, 100vw - 90px); --p: calc(var(--W) / 83.32); width: var(--W); font-weight: 700; overflow: hidden; background: var(--c1); }
+  .pv-theme { --green: var(--c2); --deep: color-mix(in srgb, var(--c2) 72%, #000); --gold: var(--c3); --cream: var(--c4); --sh: 0 calc(var(--p) * .45) calc(var(--p) * 1.7) rgba(0,0,0,.5); }
+  .pal-pages .ph { height: calc(var(--p) * 84); } .pal-pages .ph-in { height: 100%; overflow: hidden; }
+  .pal-pages .p-wrap { padding: calc(var(--p) * 5); display: flex; flex-direction: column; gap: calc(var(--p) * 3); }
+  .pal-pages .p-bar { position: relative; } .pal-pages h3.p-t, .pal-pages h3.p-t span { color: var(--c4); } .pal-pages .p-info h3, .pal-pages .p-paper-card h3 { margin: 0; font-size: calc(var(--p) * 2.8); }
+  .pal-pages .p-gr h3, .pal-pages .p-gr h3 span { color: var(--c4); font-size: calc(var(--p) * 2.8); margin: 0; }
+  .savebar { margin-top: 18px; }
+  .pal-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center; margin-top: 16px; font-size: .85rem; }
+  .pal-legend span { display: inline-flex; align-items: center; gap: 6px; } .pal-legend i { width: 18px; height: 18px; border-radius: 6px; border: 1px solid rgba(0,0,0,.25); }
+  .pal-ctl h3 { margin: 4px 0 10px; } .pal-ctl .pal-sw { margin: 14px 0; }
+  .pal-base { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+  .pal-base > input { width: 64px; height: 64px; padding: 3px; border: 2px solid var(--line); border-radius: 16px; background: #fff; cursor: pointer; }
+  .pal-dots { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 160px; }
+  .pal-dot { width: 32px; height: 32px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1.5px var(--line); cursor: pointer; } .pal-dot:hover { transform: scale(1.12); }
+  .pal-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pal-role { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; cursor: pointer; font-size: .85rem; }
+  .pal-role input { width: 40px; height: 40px; flex: none; padding: 0; border: 0; border-radius: 10px; background: none; cursor: pointer; }
+  @media (max-width: 1000px) { .pal-studio { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 520px) { .pal-roles { grid-template-columns: minmax(0, 1fr); } }
+  .cn-add { display: block; margin: calc(var(--p) * 1.4) calc(var(--p) * 3) calc(var(--p) * 2); width: calc(100% - var(--p) * 6); padding: calc(var(--p) * 1.2); border: 1.5px dashed rgba(221,222,221,.55); border-radius: calc(var(--p) * 1.4); background: transparent; color: var(--c4); font-size: calc(var(--p) * 2.6); }
+  .cn-x { position: absolute; right: calc(var(--p) * 1); top: 50%; transform: translateY(-50%); width: calc(var(--p) * 5); height: calc(var(--p) * 5); border-radius: 50%; border: 0; background: rgba(221,222,221,.18); color: var(--c4); display: grid; place-items: center; font-size: calc(var(--p) * 2.2); }
+  .cn-x:hover { background: var(--red); color: #fff; }
+  #setLive .p-gr-row { position: relative; padding-right: calc(var(--p) * 8); }
+  #setLive .ph { --W: min(380px, 100vw - 60px); --p: calc(var(--W) / 83.32); width: var(--W); overflow: hidden; font-weight: 700; }
+  #setLive .p-wrap { display: flex; flex-direction: column; gap: calc(var(--p) * 3); }
+  /* users page: same look as the website (dark rounded cards, light text, small badges) */
+  #view-users .stat { background: var(--c2); color: var(--c4); border: 0; border-radius: 20px; box-shadow: 0 6px 16px rgba(0,0,0,.28); text-align: center; padding: 20px 14px; }
+  #view-users .stat span { color: color-mix(in srgb, var(--c4) 78%, var(--c2)); } #view-users .stat.hero { background: color-mix(in srgb, var(--c2) 78%, #000); }
+  #view-users .stat b { font-size: 2.3rem; }
+  .u-card { background: var(--c2); color: var(--c4); border-radius: 22px; box-shadow: 0 6px 16px rgba(0,0,0,.28); overflow: hidden; }
+  .u-card > h3 { margin: 0; padding: 12px 18px; background: color-mix(in srgb, var(--c2) 72%, #000); border-bottom: 2px solid var(--c4); font-size: 1rem; color: var(--c4); }
+  .u-search { padding: 14px 16px 6px; } .u-search input { width: 100%; height: 44px; padding: 0 16px; border: 0; border-radius: 14px; background: var(--c4); color: var(--c2); }
+  .u-card #uTop, .u-card #uList { padding: 6px 12px 14px; }
+  #view-users .rrow, #view-users .urow { background: transparent; border: 0; border-top: 1.5px dashed color-mix(in srgb, var(--c4) 45%, transparent); border-radius: 0; box-shadow: none; padding: 12px 6px; color: var(--c4); }
+  #view-users .rrow:first-child, #view-users .urow:first-child { border-top: 0; }
+  #view-users .urow:hover { background: rgba(255,255,255,.06); }
+  #view-users .rrow { align-items: center; justify-content: flex-start; } #view-users .rrow > span:nth-child(2) { flex: 1; min-width: 0; }
+  #view-users .rrow small, #view-users .urow small { color: color-mix(in srgb, var(--c4) 70%, var(--c2)); display: block; }
+  #view-users .rrow .no { flex: none; display: grid; place-items: center; min-width: 26px; height: 22px; border-radius: 7px; background: var(--c4); color: var(--c2); font-style: normal; font-size: .78rem; }
+  #view-users .utag { display: inline-block; margin: 2px 0 2px 6px; padding: 2px 10px; border-radius: 8px; background: var(--c4); color: var(--c2); font-size: .78rem; font-weight: 700; }
+  #view-users .urow .uav, #view-users .urow img { border: 2px solid var(--c4); }
+  /* small screens: exactly like the PC layout (buttons outside the page frame), only smaller */
+  @media (max-width: 759px) {
+    .stage { --W: min(430px, 100vw - 124px); --p: calc(var(--W) / 83.32); padding: 22px 46px 28px 46px; }
+    .stage .ad-it > .ad-cust, .stage .ad-it.side > .ad-cust { left: calc(100% + var(--p) * 5 + 6px); right: auto; width: 34px; height: 34px; min-width: 0; padding: 0 !important; justify-content: center; box-shadow: none; }
+    .stage .p-gr .ad-it > .ad-cust { left: calc(100% + var(--p) * 9 + 6px); width: 30px; height: 30px; }
+    .stage .ad-cust .lbl { display: none; }
+    .stage .ad-grtools { position: absolute; left: auto; right: calc(100% + var(--p) * 5 + 6px); top: 50%; transform: translateY(-50%); flex-direction: column; padding: 0; background: none; }
+    .stage .ad-grtools button { width: 30px; height: 30px; }
+    .stage .p-gr .ad-it { padding-right: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="backdrop" id="backdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div><b id="brandName">রুকন প্রস্তুতি</b><small>অ্যাডমিন প্যানেল</small></div></div>
+    <nav class="side-nav">
+      <div class="nav-group" data-al="ad_g1">ওয়েবসাইটের হোম বাটন</div>
+      <div id="homeNav" style="display:flex;flex-direction:column;gap:6px"></div>
+      <button class="nav-add" id="newHomeBtn" type="button"><i class="fa-solid fa-plus"></i> <span data-al="ad_newhome">নতুন হোম বাটন</span></button>
+      <button class="nav-add" id="restoreBtn" type="button" hidden style="background:var(--gold);color:var(--deep);border-style:solid"><i class="fa-solid fa-rotate-left"></i> "সিলেবাস দেখুন" ফিরিয়ে আনুন</button>
+      <div class="nav-group" data-al="ad_g2">ব্যবস্থাপনা</div>
+      <button class="nav-btn" data-view="labels"><i class="fa-solid fa-font"></i> <span data-al="ad_labels">লেখা ও লেবেল</span></button>
+      <button class="nav-btn" data-view="colors"><i class="fa-solid fa-palette"></i> <span data-al="ad_colors">রঙের কম্বিনেশন</span></button>
+      <button class="nav-btn" data-view="users"><i class="fa-solid fa-users"></i> <span data-al="ad_users">ইউজার ও অ্যাক্টিভিটি</span> <span class="pill" id="navUsers">0</span></button>
+      <button class="nav-btn" data-view="settings"><i class="fa-solid fa-gear"></i> <span data-al="ad_site">সাইটের নাম</span></button>
+    </nav>
+    <div class="side-foot">
+      <a class="side-link" href="index.html" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-al="ad_view">সাইট দেখুন</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger" aria-label="মেনু"><i class="fa-solid fa-bars"></i></button>
+      <div class="topbar-title" id="topTitle">অ্যাডমিন প্যানেল</div>
+    </div>
+
+    <!-- ============ THE WEBSITE (inside the admin) ============ -->
+    <section class="view active" id="view-site">
+      <div class="crumbs" id="crumbs"></div>
+      <div id="editCard"></div>
+      <div class="stage"><span class="stage-tag">ওয়েবসাইটে যেমন দেখায়</span><div class="stage-in" id="stage"></div></div>
+      <div id="below"></div>
+    </section>
+
+    <!-- ============ USERS ============ -->
+    <section class="view" id="view-users">
+      <div class="page-head"><h1>ইউজার ও অ্যাক্টিভিটি</h1></div>
+      <div class="stat-row">
+        <div class="stat hero"><span>মোট ইউজার</span><b id="uTotal">0</b></div>
+        <div class="stat"><span>আজ সক্রিয়</span><b id="uToday">0</b></div>
+        <div class="stat"><span>মোট বই খোলা</span><b id="uReads">0</b></div>
+      </div>
+      <section class="u-card" style="margin-bottom:18px">
+        <h3><span>সবচেয়ে বেশি খোলা বই</span></h3>
+        <div id="uTop"></div>
+      </section>
+      <section class="u-card">
+        <h3><span>সব ইউজার</span></h3>
+        <div class="u-search"><input type="search" id="uSearch" placeholder="নাম বা ইমেইল দিয়ে খুঁজুন..."></div>
+        <div id="uList"></div>
+      </section>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="view" id="view-settings">
+      <div class="page-head"><h1>সাইটের নাম</h1></div>
+      <form id="settingsForm">
+        <div class="lab-pages" id="setLive">
+          <div class="lab-pg"><div class="lab-name">হোম পেজ</div><div class="ph"><div class="ph-in">
+            <header class="p-top"><div class="p-top-in"><span class="p-back" aria-hidden="true"></span><h1 class="two three"><span class="tt"><span class="epi" id="s_siteName" contenteditable="true" spellcheck="false" data-ph="অ্যাপের নাম"></span></span><span class="ts"><span class="epi" id="s_subtitle" contenteditable="true" spellcheck="false" data-ph="ছোট লাইন (না লিখলে দেখাবে না)"></span></span></h1></div></header>
+            <div class="p-wrap" id="setHomeBtns"></div></div></div></div>
+          <div class="lab-pg"><div class="lab-name">কার্ডের নামের তালিকা</div><div class="ph"><div class="ph-in"><div class="p-wrap"><section class="p-gr"><h3 class="p-t"><span>কার্ডের নাম</span><span id="cnCount"></span></h3><div id="cnList"></div><button type="button" class="cn-add" id="cnAdd"><i class="fa-solid fa-plus"></i> নতুন নাম</button></section></div></div></div></div>
+        </div>
+        <div class="savebar"><button class="btn btn-primary" type="submit" id="settingsBtn"><i class="fa-solid fa-floppy-disk"></i> সেভ করুন</button></div>
+      </form>
+    </section>
+
+    <!-- ============ COLOURS ============ -->
+    <section class="view" id="view-colors">
+      <div class="page-head"><h1>রঙের কম্বিনেশন</h1></div>
+      <div class="pal-studio">
+        <div class="card pal-prevcard"><div id="palPrev"></div><div class="pal-legend" id="palLegend"></div></div>
+        <div class="card pal-ctl">
+          <h3><i class="fa-solid fa-wand-magic-sparkles"></i> এক রং বেছে নিন</h3>
+          <div class="pal-base"><input type="color" id="palBase" value="#103C4A" aria-label="মূল রং"><div class="pal-dots" id="palDots"></div></div>
+          <h3><i class="fa-solid fa-sliders"></i> চারটি রং আলাদা করে</h3>
+          <div class="pal-roles">
+            <label class="pal-role"><input type="color" id="palIn0" value="#DDDEDD"><span><b>১. পেজের পেছন</b></span></label>
+            <label class="pal-role"><input type="color" id="palIn1" value="#103C4A"><span><b>২. হেডার ও কার্ড</b></span></label>
+            <label class="pal-role"><input type="color" id="palIn2" value="#8DB3BF"><span><b>৩. হাইলাইট</b></span></label>
+            <label class="pal-role"><input type="color" id="palIn3" value="#DDDEDD"><span><b>৪. লেখা ও ব্যাজ</b></span></label>
+          </div>
+          <div class="pal-sw big" id="palLive"></div>
+          <div class="btn-row"><button class="btn btn-primary" type="button" id="palApply"><i class="fa-solid fa-check"></i> এখনই চালু করুন</button><button class="btn btn-ghost" type="button" id="palAdd"><i class="fa-solid fa-plus"></i> বক্সে রাখুন</button></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h3><i class="fa-solid fa-palette"></i> সেভ করা কম্বিনেশন <span class="pill-n" id="palCount"></span></h3>
+        <label class="pal-auto"><input type="checkbox" id="palAuto"><span><b>প্রতি ২৪ ঘণ্টায় রং নিজে নিজে বদলাবে</b><small id="palAutoNote"></small></span></label>
+        <div class="pal-grid" id="palGrid"></div>
+        <div class="btn-row" style="margin-top:14px"><button class="btn btn-ghost" type="button" id="palReset"><i class="fa-solid fa-rotate-left"></i> ডিফল্ট ৫টি ফিরিয়ে আনুন</button></div>
+      </div>
+    </section>
+
+    <!-- ============ LABELS ============ -->
+    <section class="view" id="view-labels">
+      <div class="page-head"><h1>লেখা ও লেবেল</h1></div>
+      <div id="labList" class="lab-pages"></div>
+      <div class="savebar"><button class="btn btn-ghost" type="button" id="labReset"><i class="fa-solid fa-rotate-left"></i> সব লেখা আগের অবস্থায় ফেরান</button></div>
+    </section>
+  </main>
+</div>
+
+<!-- hidden home of the two note editors (moved into the page when needed) -->
+<div class="stash" id="stash"><div id="edReadHost"></div><div id="edNoteHost"></div></div>
+
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-head"><h2 id="umTitle">ইউজার</h2><button class="modal-x" data-close="userModal"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body" id="umBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="tocModal">
+  <div class="modal">
+    <div class="modal-head"><h2><i class="fa-solid fa-list-ol"></i> সূচিপত্র তৈরি করুন</h2><button class="modal-x" data-close="tocModal"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body"><div class="tocm-list" id="tocList"></div></div>
+    <div class="modal-foot"><button class="btn btn-ghost" id="tocAll">সব টিক</button><button class="btn btn-ghost" data-close="tocModal">বাতিল</button><button class="btn btn-primary" id="tocSave"><i class="fa-solid fa-floppy-disk"></i> সূচিপত্র সেভ করুন</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-head"><h2 id="addTitle"><i class="fa-solid fa-plus"></i> যোগ করুন</h2><button class="modal-x" data-close="addModal"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body" id="addBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal small">
+    <div class="modal-head"><h2>নিশ্চিত করুন</h2><button class="modal-x" data-close="confirmModal"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body"><p id="confirmMsg" style="line-height:1.7;color:var(--soft);"></p></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close="confirmModal">বাতিল</button>
+      <button class="btn btn-danger" id="confirmYes"><i class="fa-solid fa-trash"></i> হ্যাঁ, মুছে ফেলুন</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+(function () {
+  function closeSide() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('backdrop').classList.remove('show'); }
+  var titles = { users: 'ইউজার ও অ্যাক্টিভিটি', labels: 'লেখা ও লেবেল', colors: 'রঙের কম্বিনেশন', settings: 'সাইটের নাম' };
+  window.islShowView = function (v, title) {
+    document.querySelectorAll('.view').forEach(function (s) { s.classList.toggle('active', s.id === 'view-' + v); });
+    document.querySelectorAll('.nav-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.view === v); });
+    if (v !== 'site') document.querySelectorAll('.nav-btn[data-home]').forEach(function (b) { b.classList.remove('active'); });
+    document.getElementById('topTitle').textContent = title || titles[v] || 'অ্যাডমিন প্যানেল';
+    closeSide(); window.scrollTo(0, 0);
+  };
+  document.querySelectorAll('.nav-btn[data-view]').forEach(function (b) { b.addEventListener('click', function () { window.islShowView(b.dataset.view); }); });
+  document.getElementById('hamburger').addEventListener('click', function () { document.getElementById('sidebar').classList.add('open'); document.getElementById('backdrop').classList.add('show'); });
+  document.getElementById('backdrop').addEventListener('click', closeSide);
+  window.showAdminError = function (msg) {
+    if (document.getElementById('loadErr')) return;
+    var b = document.createElement('div'); b.id = 'loadErr';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;color:#fff;padding:12px 18px;font-size:13px;text-align:center;';
+    b.textContent = 'ডেটা লোড করা যায়নি — ইন্টারনেট চেক করুন এবং ফাইলটি সরাসরি না খুলে hosting বা local server দিয়ে খুলুন। (' + (msg || 'unknown error') + ')';
+    document.body.prepend(b);
+  };
+  setTimeout(function () { if (!window._adminLoaded) window.showAdminError('Firebase স্ক্রিপ্ট লোড হয়নি'); }, 7000);
+})();
+</script>
+
+<script type="module">
+import { db, deleteDoc, collection, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, writeBatch, serverTimestamp, uploadFile } from "./assets/firebase.js";
+import { injectDefs } from "./assets/islamic.js";
+import { fitTitle, applyNoteSizes, letterOf, RI, n2, totalHtml, esc, titleBox, boxBtn, groupBooks, groupCardHtml, infoCardHtml, ago, fmtDate, toBn, streakOf, dayKey, avatarHtml, hashPw, SITE_KEY, applyPalette, autoPalette, DEFAULT_PALETTES } from "./assets/app.js";
+import { createEditor } from "./assets/editor.js";
+import { LABELS, LABEL_GROUPS } from "./assets/labels.js";
+
+window._adminLoaded = true;
+injectDefs();
+
+const $ = (id) => document.getElementById(id);
+const byOrder = (a, b) => (a.order || 0) - (b.order || 0);
+let homes = [], syls = [], books = [], users = [], reads = [];
+let nav = { home: '', syl: '', book: '', tab: '' };
+let labWork = {};
+
+/* ================= helpers ================= */
+function toast(msg, type = 'info') {
+  const icons = { success: 'fa-circle-check', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = '<i class="fa-solid ' + (icons[type] || icons.info) + '"></i><span>' + esc(msg) + '</span>';
+  $('toastStack').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 260); }, 3200);
+}
+const openModal = (id) => $(id).classList.add('open');
+const closeModal = (id) => $(id).classList.remove('open');
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b.dataset.close)));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+let confirmCb = null;
+function askConfirm(msg, cb, yes) { $('confirmMsg').textContent = msg; $('confirmYes').innerHTML = yes || '<i class="fa-solid fa-trash"></i> হ্যাঁ, মুছে ফেলুন'; confirmCb = cb; openModal('confirmModal'); }
+$('confirmYes').addEventListener('click', async () => {
+  const cb = confirmCb; confirmCb = null; closeModal('confirmModal');
+  if (cb) await cb();
+});
+
+async function busy(btn, text, fn) {
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + text;
+  try { return await fn(); }
+  catch (err) { console.error(err); toast('ত্রুটি: ' + (err.message || err), 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = orig; }
+}
+
+const clearCache = () => { try { sessionStorage.removeItem(SITE_KEY); } catch (e) { /* ignore */ } };
+const lab = (k) => labWork[k] || (LABELS.find(l => l.k === k) || {}).d || k;
+const sylsOf = (h) => syls.filter(s => s.homeId === h).sort(byOrder);
+const isTopic = (b) => b && b.kind === 'topic';
+const isPart = (b) => b && b.kind === 'part';
+const isItem = (b) => b && b.kind === 'item';
+const kidsOf = (pid) => books.filter(b => (isPart(b) || isItem(b)) && b.parentId === pid).sort(byOrder);
+let cardNames = [];
+const tmode = (b) => b.mode || (b.link ? 'doc' : 'text');
+const MODE_LBL = { text: 'শুধু লেখা: ক্লিক করার কিছু নেই', page: 'পেজ: পরিচিতি কার্ড + ৫টি বাটন', doc: 'সরাসরি লেখা: ক্লিকে লেখাটি খোলে', list: 'তালিকা: ক খ গ সারি, প্রতিটি একটা লেখা', parts: 'খণ্ডওয়ালা: ১ ২ ৩ সারি, প্রতিটি পরিচিতি + ৫টি বাটন' };
+const booksOf = (s) => books.filter(b => b.sectionId === s && !b.kind).sort(byOrder);
+const topicsOf = (s) => books.filter(b => b.sectionId === s && isTopic(b)).sort(byOrder);
+const listOf = (o) => (isPart(o) || isItem(o)) ? kidsOf(o.parentId) : isTopic(o) ? topicsOf(o.sectionId) : booksOf(o.sectionId);
+const addBar = (kind, label) => '<div class="add-bar"><button type="button" class="btn btn-primary btn-add" data-add="' + kind + '"><i class="fa-solid fa-plus"></i> ' + (label || 'যোগ করুন') + '</button></div>';
+const nextOrder = (arr) => arr.reduce((m, x) => Math.max(m, x.order || 0), 0) + 1;
+const getH = () => homes.find(x => x.id === nav.home), getS = () => syls.find(x => x.id === nav.syl), getB = () => books.find(x => x.id === nav.book);
+const sylFull = (s) => [s.name, s.sub].filter(Boolean).join(' ');
+
+const edSizeOpts = { getSizes: () => noteSizes, saveSizes: async (z) => { const nz = Object.assign({}, noteSizes); ['h1', 'h2', 'p'].forEach(k => { if (z[k]) nz[k] = z[k]; }); try { await setDoc(doc(db, 'settings', 'main'), { noteSizes: nz }, { merge: true }); noteSizes = nz; applyNoteSizes(nz); document.querySelectorAll('.ed-area').forEach(el => ['h1', 'h2', 'p'].forEach(k => el.style.setProperty('--sz-' + k, nz[k]))); clearCache(); toast('ডিফল্ট সাইজ সেভ হয়েছে', 'success'); } catch (e) { toast('ত্রুটি: ' + (e.message || e), 'error'); } } };
+let noteSizes = { h1: 13, h2: 10, p: 8 };
+const readEd = createEditor($('edReadHost'), Object.assign({}, edSizeOpts, { minHeight: 360, toast, key: 'read', onSave: () => { const b = $('saveRead'); if (b) b.click(); } }));
+const noteEd = createEditor($('edNoteHost'), Object.assign({}, edSizeOpts, { minHeight: 360, toast, key: 'note', onSave: () => { const b = $('saveNote'); if (b) b.click(); } }));
+const tooBig = (h) => h.length > 900000 && (toast('লেখাটি অনেক বড় (ছবি বেশি)। ছবি কমান বা ছোট করুন — নাহলে সেভ হবে না।', 'error'), true);
+
+/* ================= load (+ first-time default structure) ================= */
+async function seed() {
+  // fixed ids + one batch: running this twice (two tabs, a refresh mid-way) can never create duplicates
+  const bt = writeBatch(db);
+  const hs = [['h_syl', 'সিলেবাস দেখুন', 'syl'], ['h_soon1', 'রুকন প্রস্তুতি', 'soon'], ['h_soon2', 'রুকন প্রস্তুতি যাচাই', 'soon']];
+  hs.forEach(([id, name, kind], i) => bt.set(doc(db, 'home_buttons', id), { v: 3, name, kind, order: i + 1, hidden: false }));
+  const sy = [['কর্মী সিলেবাস', ''], ['রুকন সিলেবাস', '(স্বল্প শিক্ষিত)'], ['রুকন সিলেবাস', '(শিক্ষিত)'], ['বাৎসরিক রুকন পাঠ্য', '(স্বল্প শিক্ষিত)'], ['বাৎসরিক রুকন পাঠ্য', '(শিক্ষিত)']];
+  sy.forEach(([name, sub], i) => bt.set(doc(db, 'section_buttons', 's_' + (i + 1)), { v: 3, homeId: 'h_syl', name, sub, order: i + 1, hidden: false }));
+  bt.set(doc(db, 'settings', 'main'), { seed3: true, siteName: 'রুকন প্রস্তুতি' }, { merge: true });
+  await bt.commit();
+  clearCache();
+}
+async function fetchAll() {
+  return Promise.all([
+    getDocs(collection(db, 'home_buttons')), getDocs(collection(db, 'section_buttons')), getDocs(collection(db, 'sub_buttons')),
+    getDoc(doc(db, 'settings', 'main')).catch(() => null)
+  ]);
+}
+// remove accidental duplicate buttons (same name under the same parent); never touches anything that holds books
+async function dedupe() {
+  const bookCnt = {}; books.forEach(b => { bookCnt[b.sectionId] = (bookCnt[b.sectionId] || 0) + 1; });
+  const secOf = (hid) => syls.filter(x => x.homeId === hid);
+  const weight = (h) => secOf(h.id).reduce((n, x) => n + 1 + (bookCnt[x.id] || 0), 0);
+  const ops = [], goneH = new Set(), goneS = new Set();
+  const groups = {}; homes.forEach(h => { (groups[h.name + '|' + h.kind] = groups[h.name + '|' + h.kind] || []).push(h); });
+  Object.values(groups).forEach(g => {
+    if (g.length < 2) return;
+    g.sort((a, b) => weight(b) - weight(a) || (a.order || 0) - (b.order || 0) || (a.id < b.id ? -1 : 1));
+    g.slice(1).forEach(h => {
+      if (secOf(h.id).some(x => bookCnt[x.id])) return;                // has books — leave alone
+      secOf(h.id).forEach(x => { goneS.add(x.id); ops.push((bt) => bt.delete(doc(db, 'section_buttons', x.id))); });
+      goneH.add(h.id); ops.push((bt) => bt.delete(doc(db, 'home_buttons', h.id)));
+    });
+  });
+  const sg = {}; syls.filter(x => !goneS.has(x.id)).forEach(x => { const k = x.homeId + '|' + x.name + '|' + (x.sub || ''); (sg[k] = sg[k] || []).push(x); });
+  Object.values(sg).forEach(g => {
+    if (g.length < 2) return;
+    g.sort((a, b) => (bookCnt[b.id] || 0) - (bookCnt[a.id] || 0) || (a.order || 0) - (b.order || 0) || (a.id < b.id ? -1 : 1));
+    g.slice(1).forEach(x => { if (bookCnt[x.id]) return; goneS.add(x.id); ops.push((bt) => bt.delete(doc(db, 'section_buttons', x.id))); });
+  });
+  if (!ops.length) return false;
+  await commitBatches(ops);
+  homes = homes.filter(h => !goneH.has(h.id)); syls = syls.filter(x => !goneS.has(x.id));
+  clearCache();
+  return true;
+}
+async function loadAll() {
+  let [hs, ss, bs, st] = await fetchAll();
+  const v3 = (q) => q.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.v === 3).sort(byOrder);
+  if (!v3(hs).length && !(st && st.exists() && st.data().seed3)) { await seed(); [hs, ss, bs, st] = await fetchAll(); }
+  homes = v3(hs); syls = v3(ss); books = v3(bs);
+  let cleaned = false; try { cleaned = await dedupe(); } catch (e) { console.warn('dedupe', e); }
+  const sd = st && st.exists() ? st.data() : {};
+  cardNames = Array.isArray(sd.cardNames) ? sd.cardNames : []; renderCardNames();
+  $('s_siteName').textContent = sd.siteName || ''; $('s_subtitle').textContent = sd.subtitle || ''; $('brandName').textContent = sd.siteName || 'রুকন প্রস্তুতি';
+  palLoad(sd);
+  if (sd.noteSizes) { noteSizes = Object.assign({ h1: 13, h2: 10, p: 8 }, sd.noteSizes); } document.querySelectorAll('.ed-area').forEach(el => ['h1', 'h2', 'p'].forEach(k => el.style.setProperty('--sz-' + k, noteSizes[k])));
+  labWork = {}; LABELS.forEach(l => { const v = sd.labels ? sd.labels[l.k] : ''; labWork[l.k] = v || l.d; });
+  if (!getH() && homes.length) nav = { home: homes[0].id, syl: '', book: '', tab: '' };
+  renderAll();
+  if (cleaned) toast('ডুপ্লিকেট বাটন পরিষ্কার করা হয়েছে', 'success');
+  // users + reading history are the heavy part: load them after the page is already usable
+  Promise.all([getDocs(collection(db, 'users')).catch(() => ({ docs: [] })), getDocs(collection(db, 'reads')).catch(() => ({ docs: [] }))]).then(([us, rs]) => {
+    users = us.docs.map(d => ({ id: d.id, ...d.data() })); reads = rs.docs.map(d => d.data()).filter(r => r.v === 3); renderUsers();
+  });
+}
+function renderAll() { render(); renderUsers(); renderLabels(); }
+
+/* ================= the website inside the admin ================= */
+function go(home, syl = '', book = '', tab = '') { epOpen = false; nav = { home, syl, book, tab }; render(); islShowView('site', (getH() || {}).name); }
+function stashEditors() { $('stash').append($('edReadHost'), $('edNoteHost')); }
+const applyAdminLabels = () => document.querySelectorAll('[data-al]').forEach(e => { e.textContent = lab(e.dataset.al); });
+function renderSideNav() {
+  applyAdminLabels();
+  $('restoreBtn').hidden = homes.some(h => h.kind === 'syl');
+  const on = $('view-site').classList.contains('active');
+  $('homeNav').innerHTML = homes.map(h => '<button class="nav-btn' + (on && nav.home === h.id ? ' active' : '') + '" data-home="' + h.id + '"><i class="fa-solid ' + (h.kind === 'syl' ? 'fa-book-open' : 'fa-hourglass-half') + '"></i><span style="flex:1;min-width:0;text-align:left">' + esc(h.name) + '</span>' + (h.hidden ? '<span class="pill">লুকানো</span>' : '') + '</button>').join('');
+}
+function renderCrumbs() {
+  const h = getH(), s = getS(), b = getB(), c = [];
+  if (h) c.push(['home', h.name]); if (s) c.push(['syl', sylFull(s)]); if (b && (isPart(b) || isItem(b))) { const pr = books.find(x => x.id === b.parentId); if (pr) c.push(['parent', pr.name]); } if (b) c.push(['book', b.name]);
+  $('crumbs').innerHTML = c.map((x, i) => (i ? '<i class="fa-solid fa-chevron-right"></i>' : '') + '<button type="button" data-go="' + x[0] + '" class="' + (i === c.length - 1 ? 'cur' : '') + '">' + esc(x[1]) + '</button>').join('');
+}
+let epOpen = false;
+const sylTxt = (v) => v === 'in' ? lab('sy_in') : v === 'out' ? lab('sy_out') : (v || '');
+const asDiv = (h) => h.replace(/^<a /, '<div ').replace(/<\/a>$/, '</div>').replace(/ href="[^"]*"/, '');
+/* ---- text you can type on, right where it is shown ---- */
+const IE = (kind, id, field, text, ph) => '<span class="ie" contenteditable="true" spellcheck="false" data-ie="' + kind + '|' + id + '|' + field + '" data-o="' + esc(text || '') + '"' + (ph ? ' data-ph="' + esc(ph) + '"' : '') + '>' + esc(text || '') + '</span>';
+const ILE = (k) => IE('lab', k, '', lab(k));
+const IL = (k) => esc(lab(k));
+const ITEM_BTNS = (i, n, hid, canDel) =>
+  '<button data-act="up" title="উপরে সরান" ' + (i === 0 ? 'disabled' : '') + '><i class="fa-solid fa-arrow-up"></i></button>' +
+  '<button data-act="down" title="নিচে সরান" ' + (i === n - 1 ? 'disabled' : '') + '><i class="fa-solid fa-arrow-down"></i></button>' +
+  '<button data-act="hide" class="' + (hid ? 'on' : '') + '" title="' + (hid ? 'আবার দেখান' : 'লুকান') + '"><i class="fa-solid fa-' + (hid ? 'eye-slash' : 'eye') + '"></i></button>' +
+  (canDel ? '<button data-act="del" class="danger" title="মুছুন"><i class="fa-solid fa-trash"></i></button>' : '');
+const wrapIt = (kind, o, i, n, inner, cls) => '<div class="ad-it' + (o.hidden ? ' is-hidden' : '') + (cls ? ' ' + cls : '') + '" data-kind="' + kind + '" data-id="' + o.id + '" data-i="' + i + '"><div class="ad-open" role="button" tabindex="0" title="ক্লিক করে ভেতরে ঢুকুন">' + inner + '</div><button type="button" class="ad-cust" data-cust="1" title="নাম বদলান ও সরান"><i class="fa-solid fa-pen"></i><span class="lbl"> এডিট</span></button><div class="ad-tools">' + ITEM_BTNS(i, n, o.hidden, kind !== 'syl' || o.custom) + '</div></div>';
+const emptyBox = (icon, title) => '<div class="empty"><i class="fa-solid ' + icon + '"></i><b>' + title + '</b></div>';
+
+/* ---- the page exactly as the site shows it ---- */
+const stageTop = (main, sub, note) => '<header class="p-top"><div class="p-top-in"><span class="p-back" aria-hidden="true">' + RI.back + '</span><h1 id="pTitle"' + (sub && note ? ' class="two three"' : sub || note ? ' class="two"' : '') + '><span class="tt">' + main + '</span>' + (sub ? '<span class="ts">' + sub + '</span>' : '') + (note ? '<span class="ts sn">' + note + '</span>' : '') + '</h1></div></header>';
+const barHtml = (tot, rd, un) => '<div class="p-bar"><span class="p-fil"><span>' + IL('bk_all') + '</span><b class="p-bd"><i>' + n2(tot) + '</i></b></span><div class="p-filters"><span class="p-fil"><span>' + IL('bk_read') + '</span><b class="p-bd"><i>' + n2(rd) + '</i></b></span><span class="p-fil"><span>' + IL('bk_unread') + '</span><b class="p-bd"><i>' + n2(un) + '</i></b></span></div></div>';
+const PH = (top, bar, body) => '<div class="ph">' + top + (bar || '') + '<div class="p-wrap">' + body + '</div></div>';
+const gTools = (gi, n, tp) => '<div class="ad-grtools" data-gi="' + gi + '" data-gt="' + (tp ? 't' : 'b') + '"><button data-gact="gup" ' + (gi === 0 ? 'disabled' : '') + ' title="কার্ড উপরে"><i class="fa-solid fa-arrow-up"></i></button><button data-gact="gdown" ' + (gi === n - 1 ? 'disabled' : '') + ' title="কার্ড নিচে"><i class="fa-solid fa-arrow-down"></i></button></div>';
+const syNote = (o) => String(o.syl || '').trim() ? '<small class="p-sy">' + IE('sub', o.id, 'syl', sylTxt(o.syl)) + '</small>' : '';
+const rowHtml = (n, o, plain, field) => '<div class="p-gr-row' + (plain ? ' plain' : '') + '"><span class="p-lnk"><i class="n">' + (typeof n === 'number' ? n2(n) : esc(n)) + '</i><span class="tx"><span class="p-t">' + IE('sub', o.id, field || 'name', o.name) + '</span>' + syNote(o) + '</span></span><span class="p-chk on">' + RI.tick + '</span></div>';
+const topicLink = (t) => tmode(t) !== 'text';
+
+function render() {
+  stashEditors(); renderSideNav(); renderCrumbs();
+  $('editCard').innerHTML = ''; $('below').innerHTML = '';
+  const h = getH();
+  if (!h) { $('stage').innerHTML = emptyBox('fa-hand-pointer', 'কোনো হোম বাটন নেই'); return; }
+  if (nav.book && getB()) renderBook(); else if (nav.syl && getS()) renderSyl(); else renderHome();
+  placeEditors(); fitTitle();
+}
+
+/* ---- the edit panel on top of every page ---- */
+const fld = (label, inner) => '<div class="field"><label>' + label + '</label>' + inner + '</div>';
+const EP = (id, text, ph) => '<span class="epi" id="' + id + '" contenteditable="true" spellcheck="false" data-ph="' + esc(ph) + '">' + esc(text || '') + '</span>';
+const epChips = (o) => '<div class="chips" data-for="ep_syl"><button type="button" class="chip" data-sychip="in">' + esc(lab('sy_in')) + '</button><button type="button" class="chip" data-sychip="out">' + esc(lab('sy_out')) + '</button></div>';
+const MODE_IC = { text: 'font', page: 'book-open', doc: 'file-lines', list: 'list-ol', parts: 'layer-group' };
+const epModeChips = (o) => '<div class="ep-sec"><div class="ep-lab">ক্লিক করলে কী হবে</div><div class="ep-modes" id="ep_mode" data-v="' + tmode(o) + '">' + Object.keys(MODE_LBL).map((k, i) => { const p = MODE_LBL[k].split(':'); return '<button type="button" class="ep-mode' + (k === tmode(o) ? ' on' : '') + '" data-modechip="' + k + '"><span class="no">' + toBn(i + 1) + '</span><i class="fa-solid fa-' + MODE_IC[k] + '"></i><b>' + esc(p[0]) + '</b>' + (p[1] ? '<small>' + esc(p[1].trim()) + '</small>' : '') + '</button>'; }).join('') + '</div></div>';
+const epCardChips = () => { const l = cardList(); return l.length ? '<div class="chips" data-for="ep_grp">' + l.map(t => '<button type="button" class="chip" data-cardchip="' + esc(t) + '">' + esc(t) + '</button>').join('') + '</div>' : ''; };
+function epPreview(kind, o) {
+  const NM = EP('ep_name', o.name, 'নাম'), SY = EP('ep_syl', sylTxt(o.syl), 'ছোট লেখা');
+  let inner, extra = '';
+  if (kind === 'home') inner = asDiv(boxBtn({ label: '@@N@@', href: '#', anim: false })).replace('@@N@@', NM);
+  else if (kind === 'syl') inner = asDiv(boxBtn({ label: '@@N@@', sub: '@@S@@', sub2: '@@Y@@', href: '#', anim: false })).replace('@@N@@', NM).replace('@@S@@', EP('ep_sub', o.sub, 'বন্ধনীর লেখা')).replace('@@Y@@', SY) + epChips(o);
+  else {
+    inner = groupCardHtml({ title: '@@G@@', rows: [{ label: '@@N@@', n: 'ক)', sy: '@@Y@@', id: 'x' }], anim: false }).replace('@@G@@', EP('ep_grp', o.grp || '', 'কার্ডের নাম')).replace('@@N@@', NM).replace('@@Y@@', SY) + epChips(o) + epCardChips();
+    if (kind === 'topic' && (tmode(o) === 'list' || tmode(o) === 'parts')) extra = '<div class="ep-lab">ভেতরের কার্ড</div>' + groupCardHtml({ title: '@@C@@', rows: [{ label: '…', n: 'ক)', id: 'y' }], anim: false }).replace('@@C@@', EP('ep_card', o.cardTitle || '', tmode(o) === 'parts' ? lab('parts_t') : 'কার্ডের নাম'));
+  }
+  return '<div class="ph ep-ph"><div class="p-wrap">' + inner + extra + '</div></div>' + (kind === 'topic' ? epModeChips(o) : '');
+}
+function editPanel(kind, o) {
+  const A = (id, ic, t, cls, dis) => '<button type="button" class="ep-b' + (cls ? ' ' + cls : '') + '" id="' + id + '"' + (dis ? ' disabled' : '') + '><i class="fa-solid ' + ic + '"></i><span>' + t + '</span></button>';
+  const hide = (id) => A(id, o.hidden ? 'fa-eye-slash' : 'fa-eye', o.hidden ? 'লুকানো — দেখান' : 'লুকান', o.hidden ? 'warn' : '');
+  let acts = '';
+  if (kind === 'home') { const hi = homes.indexOf(o); acts = A('hUp', 'fa-arrow-up', 'উপরে', '', hi === 0) + A('hDown', 'fa-arrow-down', 'নিচে', '', hi === homes.length - 1) + hide('hHide'); }
+  else if (kind === 'syl') acts = hide('sHide') + (o.custom ? A('sDel', 'fa-trash', 'মুছুন', 'danger') : '');
+  else acts = hide('bHide') + A('bDel', 'fa-trash', 'মুছুন', 'danger');
+  return '<div class="ep"><div class="ep-bar">' + A('epToggle', epOpen ? 'fa-chevron-up' : 'fa-pen', 'নাম ও বিবরণ', 'prim' + (epOpen ? ' on' : '')) + '<span class="ep-sp"></span>' + acts + '</div>' +
+    (epOpen ? '<div class="ep-body"><div class="ep-pv" id="epPv">' + epPreview(kind, o) + '</div><div class="ep-foot"><button class="btn btn-primary" id="epSave"><i class="fa-solid fa-floppy-disk"></i> সেভ করুন</button></div></div>' : '') + '</div>';
+}
+
+function renderHome() {
+  const h = getH(), list = sylsOf(h.id);
+  $('editCard').innerHTML = editPanel('home', h);
+  let body;
+  if (h.kind === 'syl') {
+    body = list.length ? '<div class="p-stack btns">' + list.map((s, i) => wrapIt('syl', s, i, list.length,
+      asDiv(boxBtn({ label: '@@L@@', sub: s.sub ? '@@S@@' : '', sub2: String(s.syl || '').trim() ? '@@N@@' : '', href: '#', anim: false })).replace('@@L@@', IE('syl', s.id, 'name', s.name)).replace('@@S@@', IE('syl', s.id, 'sub', s.sub || '')).replace('@@N@@', IE('syl', s.id, 'syl', sylTxt(s.syl))))).join('') + '</div>' : emptyBox('fa-book', 'এখনো কিছু নেই');
+  } else body = '<section class="p-card p-soon"><h3 class="p-t">' + IL('soon_t') + '</h3><div style="padding:calc(var(--p)*4) calc(var(--p)*3)"><p>' + IL('soon_s') + '</p></div></section>';
+  $('stage').innerHTML = PH(stageTop(IE('home', h.id, 'name', h.name)), '', body);
+  $('below').innerHTML = h.kind === 'syl' ? addBar('home', 'নতুন সিলেবাস বাটন') : '';
+}
+
+/* the syllabus page: subject rows (cards) first, then the book cards */
+function sylPageHtml(s, cur) {
+  const list = booksOf(s.id), tl = topicsOf(s.id), tgs = groupBooks(tl), vis = list.concat(tl).filter(b => !b.hidden).length;
+  const topicHtml = tgs.length ? '<div class="p-stack" style="margin-bottom:calc(var(--p) * 3.5)">' + tgs.map((g, gi) => '<section class="p-gr"><h3 class="p-t"><span>' + IE('grp', 't', gi, g.title, 'কার্ডের নাম') + '</span><span>' + totalHtml(g.items.length) + '</span></h3>' + gTools(gi, tgs.length, true) +
+    g.items.map((t, i) => wrapIt('topic', t, i, g.items.length, rowHtml(letterOf(i).replace(')', ''), t, tmode(t) === 'text'), t.id === cur ? 'cust sel' : '')).join('') + '</section>').join('') + '</div>' : '';
+  const gs = groupBooks(list); let n = 0;
+  const bookHtml = gs.length ? '<div class="p-stack">' + gs.map((g, gi) => '<section class="p-gr"><h3 class="p-t"><span>' + IE('grp', 'b', gi, g.title, 'কার্ডের নাম') + '</span><span>' + totalHtml(g.items.length) + '</span></h3>' + gTools(gi, gs.length, false) +
+    g.items.map((b, i) => { n++; return wrapIt('book', b, i, g.items.length, rowHtml(n, b, false), b.id === cur ? 'cust sel' : ''); }).join('') + '</section>').join('') + '</div>' : (tgs.length ? '' : emptyBox('fa-book', 'এখনো কিছু নেই'));
+  return PH(stageTop(IE('syl', s.id, 'name', s.name), s.sub ? IE('syl', s.id, 'sub', s.sub) : '', String(s.syl || '').trim() ? IE('syl', s.id, 'syl', sylTxt(s.syl)) : ''), barHtml(vis, 0, vis), topicHtml + bookHtml);
+}
+function renderSyl() {
+  const s = getS();
+  $('editCard').innerHTML = editPanel('syl', s);
+  $('stage').innerHTML = sylPageHtml(s, '');
+  $('below').innerHTML = addBar('syl');
+}
+
+const TABS = [['read', 'b_btn_read', 'readHtml', 'fa-book-open'], ['pdf', 'b_btn_pdf', 'pdfUrl', 'fa-file-pdf'], ['note', 'b_btn_note', 'noteHtml', 'fa-note-sticky'], ['audio', 'b_btn_audio', 'audioUrl', 'fa-headphones'], ['video', 'b_btn_video', 'videoUrl', 'fa-circle-play']];
+const hasOf = (b, f) => !!String(b[f] || '').replace(/<[^>]*>/g, '').trim() || (/Url$/.test(f) && !!b[f]) || (/Html$/.test(f) && /<img|<table/i.test(b[f] || ''));
+const cardList = () => [...new Set([...cardNames, ...books.filter(x => !x.kind || x.kind === 'topic').map(x => (x.grp || '').trim()), ...books.filter(x => x.cardTitle).map(x => x.cardTitle)].filter(Boolean))];
+const labIn = (k) => '<input type="text" data-lk="' + k + '" maxlength="60" value="' + esc(lab(k)) + '">';
+const labCard = (title, keys, open) => '<details class="card edit-card lab-card" id="labCard"' + (open ? ' open' : '') + '><summary><i class="fa-solid fa-font"></i> ' + title + '</summary><div class="lab-grid">' + keys.map(k => { const l = LABELS.find(x => x.k === k) || { t: k }; return '<div class="field"><label>' + esc(l.t) + '</label>' + labIn(k) + '</div>'; }).join('') + '</div><div class="btn-row"><button class="btn btn-primary" id="labsSave"><i class="fa-solid fa-floppy-disk"></i> সেভ করুন</button></div></details>';
+async function persistLabs() {
+  const out = {}; LABELS.forEach(l => { const v = String(labWork[l.k] != null ? labWork[l.k] : '').trim(); if (v && v !== l.d) out[l.k] = v; });
+  try { await updateDoc(doc(db, 'settings', 'main'), { labels: out }); } catch (e) { await setDoc(doc(db, 'settings', 'main'), { labels: out }, { merge: true }); }
+  clearCache();
+}
+async function saveLabs(map) { Object.keys(map).forEach(k => { const l = LABELS.find(x => x.k === k); if (l) labWork[k] = map[k] || l.d; }); await persistLabs(); }
+const tabBtns = (b) => '<div class="p-stack ico">' + TABS.map(([t, k, f]) => { const has = hasOf(b, f), sel = nav.tab === t;
+  return '<div class="ad-it side' + (sel ? ' cust' : '') + '"><div class="ad-body">' + asDiv(boxBtn({ label: '@@L@@', href: '#', anim: false, icon: ({ read: 'book', pdf: 'file', note: 'notes', audio: 'audio', video: 'video' })[t] })).replace('@@L@@', IL(k)).replace('class="p-btn', 'class="p-btn' + (has ? ' has' : ' off') + (sel ? ' sel' : '')).replace('<div ', '<div data-tab="' + t + '" ') + '</div><button type="button" class="ad-cust" data-tabcust="' + t + '" title="খুলুন ও নাম বদলান"><i class="fa-solid fa-pen"></i><span class="lbl"> এডিট</span></button></div>'; }).join('') + '</div>';
+
+const FIX = [['name', 'b_name', 'বইয়ের নাম'], ['author', 'b_author', 'এখানে লিখুন'], ['translator', 'b_trans', 'এখানে লিখুন'], ['publisher', 'b_pub', 'এখানে লিখুন'], ['pages', 'b_pages', 'যেমন ৪০০'], ['price', 'b_price', 'যেমন ৩০০']];
+function infoLive(b) {
+  const rows = FIX.map(([f, k, ph]) => '<div' + (String(b[f] || '').trim() ? '' : ' class="emp"') + '><span>' + IL(k) + '</span><b class="vv"><em>' + IE('sub', b.id, f, b[f] || '', ph) + '</em></b></div>').join('') +
+    (Array.isArray(b.extra) ? b.extra : []).map((e, i) => '<div class="exr"><span>' + IE('ex', b.id, i + '|l', e.l || '', 'তথ্যের নাম') + '</span><b class="vv"><em>' + IE('ex', b.id, i + '|v', e.v || '', 'মান') + '</em></b><button type="button" class="exr-del" data-xdel="' + i + '" title="সরান"><i class="fa-solid fa-xmark"></i></button></div>').join('') +
+    '<div class="exr-add"><button type="button" class="btn btn-ghost" id="exAdd"><i class="fa-solid fa-plus"></i> আরো তথ্য যোগ করুন</button></div>';
+  return '<section class="p-card p-info" id="infoBox"><h3 class="p-t">' + IL('b_info') + '</h3><div class="rows">' + rows + '</div></section>';
+}
+
+function renderTopic(b) {            // modes: text / doc  — shown inside the syllabus page like on the site
+  const mode = tmode(b), s = getS();
+  nav.tab = mode === 'doc' ? 'read' : '';
+  $('editCard').innerHTML = editPanel('topic', b);
+  $('stage').innerHTML = sylPageHtml(s, b.id);
+  $('below').innerHTML = (mode === 'doc' ? tabPanel(b) : '');
+}
+function kidsPage(par, cur) {          // the list / parts page (list.html)
+  const mode = tmode(par), parts = mode === 'parts', kids = kidsOf(par.id), kind = parts ? 'part' : 'item';
+  const card = kids.length ? '<section class="p-gr"><h3 class="p-t"><span>' + IE('sub', par.id, 'cardTitle', par.cardTitle || (parts ? lab('parts_t') : (par.grp || '')), parts ? lab('parts_t') : 'কার্ডের নাম') + '</span><span>' + totalHtml(kids.length) + '</span></h3>' +
+    kids.map((c, i) => wrapIt(kind, c, i, kids.length, rowHtml(parts ? i + 1 : letterOf(i).replace(')', ''), c, false), c.id === cur ? 'cust sel' : '')).join('') + '</section>' : emptyBox('fa-list', 'এখনো কিছু নেই');
+  return PH(stageTop(IE('sub', par.id, 'name', par.name), '', String(par.syl || '').trim() ? IE('sub', par.id, 'syl', sylTxt(par.syl)) : ''), barHtml(kids.length, 0, kids.length), '<div class="p-stack">' + card + '</div>');
+}
+function renderKids(b) {             // modes: list / parts
+  const parts = tmode(b) === 'parts';
+  nav.tab = '';
+  $('editCard').innerHTML = editPanel('topic', b);
+  $('stage').innerHTML = kidsPage(b, '');
+  $('below').innerHTML = addBar(parts ? 'part' : 'item', parts ? 'খণ্ড যোগ করুন' : 'লেখা যোগ করুন');
+}
+function renderItem(b) {             // one text of a list
+  nav.tab = 'note';
+  const par = books.find(x => x.id === b.parentId);
+  $('editCard').innerHTML = editPanel('item', b);
+  $('stage').innerHTML = par ? kidsPage(par, b.id) : '';
+  $('below').innerHTML = tabPanel(b);
+}
+function renderBook() {              // books, "page" rows and parts: info card + 5 buttons
+  const g = getB();
+  if (isItem(g)) return renderItem(g);
+  if (isTopic(g)) { const m = tmode(g); if (m === 'text' || m === 'doc') return renderTopic(g); if (m === 'list' || m === 'parts') return renderKids(g); }
+  const b = g, topic = isTopic(b), part = isPart(b), par = part ? books.find(x => x.id === b.parentId) : null;
+  $('editCard').innerHTML = editPanel(part ? 'part' : topic ? 'topic' : 'book', b);
+  const bn = String(b.syl || '').trim() ? IE('sub', b.id, 'syl', sylTxt(b.syl)) : '', top = par ? stageTop(IE('sub', par.id, 'name', par.name), IE('sub', b.id, 'name', b.name), bn) : stageTop(IE('sub', b.id, 'name', b.name), '', bn);
+  $('stage').innerHTML = PH(top, '', infoLive(b) + tabBtns(b));
+  $('below').innerHTML = (nav.tab ? tabPanel(b) : '');
+}
+const HELP = '<ol class="help-steps"><li>নিচের বক্সে সরাসরি লিখুন, অথবা ওয়ার্ড/অন্য জায়গা থেকে কপি করে পেস্ট করুন।</li><li>উপরের ট্যাব (হোম, ইনসার্ট, লেআউট ...) থেকে বড় লেখা, রং, ছবি, টেবিল ইত্যাদি দিন।</li><li>শেষে নিচের সবুজ <b>সেভ</b> বাটন (বা Ctrl+S) চাপুন।</li></ol>';
+function tabPanel(b) {
+  const nm = { read: 'v_read', note: 'v_note', audio: 'v_audio', video: 'v_video' }[nav.tab], tk = TABS.find(x => x[0] === nav.tab);
+  return tabPanel0(b);
+}
+function tabPanel0(b) {
+  const t = nav.tab, T = TABS.find(x => x[0] === t), title = '<i class="fa-solid ' + T[3] + '"></i> ' + esc(lab(T[1]));
+  if (t === 'read' || t === 'note') {
+    return '<div class="card res-card"><h3><i class="fa-solid ' + T[3] + '"></i> ' + IL(t === 'read' ? 'v_read' : 'v_note') + ' <small class="res-sub">— ' + (t === 'read' ? 'পড়ার লেখা' : 'নোটের লেখা') + '</small></h3>' + '<div id="slot"></div>' + '<label class="chk-line" style="margin-top:12px"><input type="checkbox" id="tocOn"' + (b[t === 'read' ? 'readNoToc' : 'noteNoToc'] ? '' : ' checked') + '> পাঠকের জন্য সূচিপত্র দেখান</label>' +
+      '<div class="btn-row" style="margin-top:14px"><button class="btn btn-primary" id="' + (t === 'read' ? 'saveRead' : 'saveNote') + '"><i class="fa-solid fa-floppy-disk"></i> সেভ করুন</button><button class="btn btn-ghost" id="tocMake"><i class="fa-solid fa-list-ol"></i> সূচিপত্র তৈরি করুন</button></div></div>';
+  }
+  const f = { pdf: 'pdfUrl', audio: 'audioUrl', video: 'videoUrl' }[t], acc = { pdf: 'application/pdf', audio: 'audio/*', video: 'video/*' }[t];
+  const lk = EP('resUrl', b[f] || '', 'লিংক বসান (https://…)');
+  const link = '<div class="res-link"><i class="fa-solid fa-link"></i>' + lk + '</div><label class="res-up"><i class="fa-solid fa-upload"></i> ফাইল বেছে নিন<input type="file" id="resFile" accept="' + acc + '" hidden></label><div class="up-prog" id="resProg"><i></i></div>';
+  const body = t === 'pdf' ? asDiv(boxBtn({ label: '@@L@@', href: '#', anim: false, icon: 'pdf' })).replace('@@L@@', IL('v_dl')) + link
+    : '<section class="p-card"><h3 class="p-t">' + IL(t === 'audio' ? 'v_audio' : 'v_video') + '</h3><div class="res-body">' + link + '</div></section>';
+  return '<div class="card res-card"><div class="ph res-ph">' + stageTop(esc(b.name)) + '<div class="p-wrap">' + body + '</div></div>' +
+    '<div class="btn-row res-foot"><button class="btn btn-primary" id="resSave"><i class="fa-solid fa-floppy-disk"></i> সেভ করুন</button>' + (b[f] ? '<button class="btn btn-danger" id="resClear"><i class="fa-solid fa-trash"></i> মুছুন</button><a class="btn btn-ghost" href="' + esc(b[f]) + '" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> খুলে দেখুন</a>' : '') + '</div></div>';
+}
+function placeEditors() {
+  const b = getB(), slot = $('slot'); if (!slot || !b) return;
+  if (nav.tab === 'read') { slot.appendChild($('edReadHost')); readEd.setHtml(b.readHtml || '', 'read_' + b.id); }
+  else if (nav.tab === 'note') { slot.appendChild($('edNoteHost')); noteEd.setHtml(b.noteHtml || '', 'note_' + b.id); }
+}
+
+/* ---- table of contents: tick / untick the titles; unticked ones are saved as "off" keys (same keys the site uses) ---- */
+const tocKeyOf = (h, seen) => { const lv = h.tagName === 'H1' ? 1 : 2, base = lv + '|' + h.textContent.trim(); const n = seen[base] = (seen[base] || 0) + 1; return base + '|' + n; };
+function openToc() {
+  const b = getB(), ed = nav.tab === 'read' ? readEd : noteEd, field = nav.tab === 'read' ? 'readTocOff' : 'noteTocOff';
+  const d = document.createElement('div'); d.innerHTML = ed.getHtml(); d.querySelectorAll('.toc').forEach(n => n.remove());
+  const seen = {}, off = new Set(Array.isArray(b[field]) ? b[field] : []);
+  const hs = [...d.querySelectorAll('h1,h2')].filter(h => h.textContent.trim());
+  if (!hs.length) return toast('আগে লেখায় "প্রধান শিরোনাম" বা "উপ-শিরোনাম" ব্যবহার করুন (স্টাইল মেনু থেকে)', 'info');
+  $('tocList').innerHTML = hs.map(h => { const k = tocKeyOf(h, seen); return '<label class="' + (h.tagName === 'H1' ? 'l1' : 'l2') + '"><input type="checkbox" data-k="' + esc(k) + '"' + (off.has(k) ? '' : ' checked') + '><span>' + esc(h.textContent.trim()) + '</span></label>'; }).join('');
+  openModal('tocModal');
+}
+$('tocAll').addEventListener('click', () => { document.querySelectorAll('#tocList input').forEach(i => { i.checked = true; }); });
+$('tocSave').addEventListener('click', (e) => {
+  const b = getB(), field = nav.tab === 'read' ? 'readTocOff' : 'noteTocOff', offList = [...document.querySelectorAll('#tocList input')].filter(i => !i.checked).map(i => i.dataset.k);
+  guard(e.currentTarget, async () => { await updateDoc(doc(db, 'sub_buttons', b.id), { [field]: offList }); b[field] = offList; clearCache(); closeModal('tocModal'); toast('সূচিপত্র সেভ হয়েছে', 'success'); });
+});
+
+/* ---- writes ---- */
+async function commitBatches(ops) { for (let i = 0; i < ops.length; i += 400) { const bt = writeBatch(db); ops.slice(i, i + 400).forEach(fn => fn(bt)); await bt.commit(); } }
+async function moveItem(list, idx, dir, coll) {
+  const j = idx + dir; if (j < 0 || j >= list.length) return;
+  const arr = list.slice(); [arr[idx], arr[j]] = [arr[j], arr[idx]];
+  try {
+    const ops = []; arr.forEach((it, k) => { if (it.order !== k + 1) ops.push((bt) => bt.update(doc(db, coll, it.id), { order: k + 1 })); });
+    if (ops.length) await commitBatches(ops);
+    arr.forEach((it, k) => { it.order = k + 1; }); homes.sort(byOrder); syls.sort(byOrder); books.sort(byOrder); clearCache(); render();
+  } catch (err) { console.error(err); toast('ক্রম বদলাতে ব্যর্থ: ' + (err.message || err), 'error'); loadAll(); }
+}
+async function renumber(seq) {
+  try { const ops = []; seq.forEach((it, k) => { if (it.order !== k + 1) ops.push((bt) => bt.update(doc(db, 'sub_buttons', it.id), { order: k + 1 })); }); if (ops.length) await commitBatches(ops); seq.forEach((it, k) => { it.order = k + 1; }); books.sort(byOrder); clearCache(); render(); }
+  catch (err) { console.error(err); toast('ক্রম বদলাতে ব্যর্থ: ' + (err.message || err), 'error'); loadAll(); }
+}
+const gk = (b) => (b.grp || '').trim();
+function moveBook(o, dir) {
+  const all = listOf(o), i = all.indexOf(o); let j = i + dir; while (j >= 0 && j < all.length && gk(all[j]) !== gk(o)) j += dir;
+  if (j < 0 || j >= all.length) return; const t = all[j]; all.splice(i, 1); all.splice(all.indexOf(t) + (dir > 0 ? 1 : 0), 0, o); renumber(all);
+}
+function moveGroup(gi, dir, tp) {
+  const gs = groupBooks((tp ? topicsOf : booksOf)(nav.syl)), j = gi + dir; if (j < 0 || j >= gs.length) return; [gs[gi], gs[j]] = [gs[j], gs[gi]]; renumber(gs.flatMap(g => g.items));
+}
+async function renameGroup(gi, tp) {
+  const g = groupBooks((tp ? topicsOf : booksOf)(nav.syl))[gi]; const nn = prompt('গ্রুপের নতুন নাম:', g.title); if (nn == null) return; const v = nn.trim();
+  try { await commitBatches(g.items.map(b => (bt) => bt.update(doc(db, 'sub_buttons', b.id), { grp: v }))); g.items.forEach(b => { b.grp = v; }); clearCache(); render(); toast('গ্রুপের নাম বদলেছে', 'success'); } catch (e) { toast('ত্রুটি: ' + (e.message || e), 'error'); }
+}
+async function toggleHide(coll, o) {
+  const v = !o.hidden;
+  try { await updateDoc(doc(db, coll, o.id), { hidden: v }); o.hidden = v; clearCache(); render(); toast(v ? 'সাইট থেকে লুকানো হয়েছে' : 'সাইটে আবার দেখানো হচ্ছে', 'success'); }
+  catch (err) { console.error(err); toast('ত্রুটি: ' + (err.message || err), 'error'); }
+}
+const delOps = (sylList, bookList, extra) => [...bookList.map(b => (bt) => bt.delete(doc(db, 'sub_buttons', b.id))), ...sylList.map(s => (bt) => bt.delete(doc(db, 'section_buttons', s.id))), ...extra];
+async function removeBook(b) { const all = [b, ...books.filter(x => x.parentId === b.id)]; await commitBatches(delOps([], all, [])); const ids = new Set(all.map(x => x.id)); books = books.filter(x => !ids.has(x.id)); }
+async function removeSyl(s) { const bs = books.filter(b => b.sectionId === s.id); await commitBatches(delOps([s], bs, [])); books = books.filter(x => x.sectionId !== s.id); syls = syls.filter(x => x.id !== s.id); }
+async function removeHome(h) {
+  const ss = sylsOf(h.id), bs = books.filter(b => b.homeId === h.id || ss.some(s => s.id === b.sectionId));
+  await commitBatches(delOps(ss, bs, [(bt) => bt.delete(doc(db, 'home_buttons', h.id))]));
+  books = books.filter(b => !bs.includes(b)); syls = syls.filter(s => !ss.includes(s)); homes = homes.filter(x => x.id !== h.id);
+}
+const guard = (btn, fn) => busy(btn, 'সেভ হচ্ছে...', fn);
+
+const ACT = {
+  hUp: () => moveItem(homes, homes.indexOf(getH()), -1, 'home_buttons'), hDown: () => moveItem(homes, homes.indexOf(getH()), 1, 'home_buttons'),
+  hHide: () => toggleHide('home_buttons', getH()),
+  hDel: () => { const h = getH(); askConfirm('"' + h.name + '" বাটন এবং তার ভেতরের সব সিলেবাস, বই ও লেখা স্থায়ীভাবে মুছে যাবে।', async () => {
+    try { await removeHome(h); clearCache(); nav = { home: homes[0] ? homes[0].id : '', syl: '', book: '', tab: '' }; render(); toast('মুছে ফেলা হয়েছে', 'success'); } catch (e) { toast('ত্রুটি: ' + (e.message || e), 'error'); } }); },
+  sHide: () => toggleHide('section_buttons', getS()),
+  sDel: () => { const s = getS(); askConfirm('"' + sylFull(s) + '" এবং তার ভেতরের সব বই ও লেখা স্থায়ীভাবে মুছে যাবে।', async () => {
+    try { await removeSyl(s); clearCache(); nav.syl = ''; nav.book = ''; nav.tab = ''; render(); toast('মুছে ফেলা হয়েছে', 'success'); } catch (e) { toast('ত্রুটি: ' + (e.message || e), 'error'); } }); },
+  bUp: () => moveBook(getB(), -1), bDown: () => moveBook(getB(), 1),
+  bHide: () => toggleHide('sub_buttons', getB()),
+  bDel: () => { const b = getB(); askConfirm('"' + b.name + '" এবং তার ভেতরের সব লেখা স্থায়ীভাবে মুছে যাবে।', async () => {
+    try { const par = isPart(b) ? b.parentId : ''; await removeBook(b); clearCache(); nav.book = par; nav.tab = ''; render(); toast('মুছে ফেলা হয়েছে', 'success'); } catch (e) { toast('ত্রুটি: ' + (e.message || e), 'error'); } }); },
+  exAdd: () => { const b = getB(), extra = (Array.isArray(b.extra) ? b.extra : []).concat([{ l: '', v: '' }]);
+    updateDoc(doc(db, 'sub_buttons', b.id), { extra }).then(() => { b.extra = extra; clearCache(); render(); const k = document.querySelectorAll('#infoBox .exr [data-ie$="|l"]'); if (k.length) k[k.length - 1].focus(); }).catch(er => toast('ত্রুটি: ' + (er.message || er), 'error')); },
+  epToggle: () => { epOpen = !epOpen; render(); },
+  epSave: (btn) => {
+    const g = (id) => { const e = $(id); return !e ? undefined : id === 'ep_mode' ? e.dataset.v : (e.textContent || '').replace(/\s+/g, ' ').trim(); }, d = {};
+    let coll, o; if (nav.book) { o = getB(); coll = 'sub_buttons'; } else if (nav.syl) { o = getS(); coll = 'section_buttons'; } else { o = getH(); coll = 'home_buttons'; }
+    const map = { name: 'ep_name', sub: 'ep_sub', grp: 'ep_grp', cardTitle: 'ep_card', syl: 'ep_syl', mode: 'ep_mode' };
+    Object.keys(map).forEach(k => { const v = g(map[k]); if (v !== undefined) d[k] = v; });
+    if ('name' in d && !d.name) return toast('নাম খালি রাখা যাবে না', 'error');
+    if ('mode' in d) d.link = false;
+    guard(btn, async () => { await updateDoc(doc(db, coll, o.id), d); Object.assign(o, d); epOpen = false; if ('mode' in d) nav.tab = ''; clearCache(); render(); toast('সেভ হয়েছে', 'success'); }); },
+  labsSave: (btn) => { const lk = {}; btn.closest('#labCard').querySelectorAll('[data-lk]').forEach(i => { lk[i.dataset.lk] = i.value.trim(); });
+    guard(btn, async () => { await saveLabs(lk); render(); toast('লেখা সেভ হয়েছে — সাইট রিলোড করলে দেখা যাবে', 'success'); }); },
+  saveRead: (btn) => saveRich(btn, readEd, 'readHtml', 'readText'), saveNote: (btn) => saveRich(btn, noteEd, 'noteHtml', 'note'),
+  tocMake: () => openToc(),
+  resSave: (btn) => saveUrl(btn, ($('resUrl').textContent || '').trim()),
+  resClear: (btn) => saveUrl(btn, '')
+};
+function saveRich(btn, ed, hf, tf) {
+  const b = getB(), html = ed.getHtml(); if (tooBig(html)) return;
+  guard(btn, async () => { const d = { [hf]: html, [tf]: ed.getText() }; await updateDoc(doc(db, 'sub_buttons', b.id), d); Object.assign(b, d); ed.markSaved(); clearCache(); toast('সেভ হয়েছে', 'success'); const bs = document.querySelector('[data-tab="' + nav.tab + '"]'); if (bs) { bs.classList.toggle('has', hasOf(b, hf)); const sm = bs.querySelector('small'); if (sm) sm.textContent = hasOf(b, hf) ? '✓ যোগ করা আছে' : 'খালি — ক্লিক করে যোগ করুন'; } });
+}
+function saveUrl(btn, url) {
+  const b = getB(), f = { pdf: 'pdfUrl', audio: 'audioUrl', video: 'videoUrl' }[nav.tab];
+  if (url && !/^https?:\/\//i.test(url)) return toast('লিংক http:// বা https:// দিয়ে শুরু হতে হবে', 'error');
+  guard(btn, async () => { await updateDoc(doc(db, 'sub_buttons', b.id), { [f]: url }); b[f] = url; clearCache(); render(); toast(url ? 'সেভ হয়েছে' : 'সরিয়ে ফেলা হয়েছে', 'success'); });
+}
+async function doUpload(file) {
+  const b = getB(), f = { pdf: 'pdfUrl', audio: 'audioUrl', video: 'videoUrl' }[nav.tab], prog = $('resProg');
+  prog.style.display = 'block'; prog.firstElementChild.style.width = '2%';
+  try {
+    const url = await uploadFile(file, 'books/' + b.id + '/' + nav.tab + '_' + Date.now() + '_' + file.name.replace(/[^\w.\-]+/g, '_'), (p) => { prog.firstElementChild.style.width = Math.max(2, Math.round(p * 100)) + '%'; });
+    await updateDoc(doc(db, 'sub_buttons', b.id), { [f]: url }); b[f] = url; clearCache(); render(); toast('আপলোড হয়ে সেভ হয়েছে', 'success');
+  } catch (e) { console.error(e); prog.style.display = 'none'; toast('আপলোড হয়নি — Firebase Storage চালু আছে কিনা দেখুন, অথবা লিংক বসিয়ে সেভ করুন। (' + (e.code || e.message || e) + ')', 'error'); }
+}
+
+const itemOf = (it) => it.dataset.kind === 'syl' ? syls.find(x => x.id === it.dataset.id) : books.find(x => x.id === it.dataset.id);
+const goItem = (it) => it.dataset.kind === 'syl' ? go(nav.home, it.dataset.id) : go(nav.home, nav.syl, it.dataset.id);
+$('view-site').addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.closest('.ie')) return;
+  const cr = t.closest('[data-go]'); if (cr) { const k = cr.dataset.go; if (k === 'parent') return go(nav.home, nav.syl, (getB() || {}).parentId || ''); return go(nav.home, k === 'home' ? '' : nav.syl, k === 'book' ? nav.book : '', k === 'book' ? nav.tab : ''); }
+  const gb = t.closest('.ad-grtools button[data-gact]'); if (gb) { const gi = +gb.parentElement.dataset.gi, tp = gb.parentElement.dataset.gt === 't'; return gb.dataset.gact === 'gup' ? moveGroup(gi, -1, tp) : moveGroup(gi, 1, tp); }
+  const xd = t.closest('[data-xdel]'); if (xd) { const b = getB(), extra = (b.extra || []).filter((_, i) => i !== +xd.dataset.xdel); updateDoc(doc(db, 'sub_buttons', b.id), { extra }).then(() => { b.extra = extra; clearCache(); render(); }).catch(er => toast('ত্রুটি: ' + (er.message || er), 'error')); return; }
+  const sc = t.closest('[data-sychip]'); if (sc) { const inp = $('ep_syl'); inp.textContent = lab(sc.dataset.sychip === 'in' ? 'sy_in' : 'sy_out'); inp.focus(); return; }
+  const cc = t.closest('[data-cardchip]'); if (cc) { const inp = $('ep_grp'); inp.textContent = cc.dataset.cardchip; return; }
+  const mc = t.closest('[data-modechip]'); if (mc) { const box = $('ep_mode'); box.dataset.v = mc.dataset.modechip; box.querySelectorAll('.ep-mode').forEach(x => x.classList.toggle('on', x === mc)); return; }
+  const ad = t.closest('[data-add]'); if (ad) { openAdd(ad.dataset.add); return; }
+  const tc = t.closest('[data-tabcust]'); if (tc) { nav.tab = nav.tab === tc.dataset.tabcust ? '' : tc.dataset.tabcust; render(); if (nav.tab) $('below').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  const cb = t.closest('.ad-cust'); if (cb) { const it = cb.closest('.ad-it'); it.classList.toggle('cust'); const f = it.classList.contains('cust') && it.querySelector('.ie'); if (f) f.focus(); return; }
+  const tb = t.closest('.ad-tools button[data-act]');
+  if (tb) {
+    const it = tb.closest('.ad-it'), o = itemOf(it), kind = it.dataset.kind, list = kind === 'syl' ? sylsOf(nav.home) : kind === 'topic' ? topicsOf(nav.syl) : booksOf(nav.syl), coll = kind === 'syl' ? 'section_buttons' : 'sub_buttons', i = list.indexOf(o), a = tb.dataset.act;
+    if (a === 'open') return goItem(it);
+    if (a === 'up') (kind !== 'syl' ? moveBook(o, -1) : moveItem(list, i, -1, coll)); else if (a === 'down') (kind !== 'syl' ? moveBook(o, 1) : moveItem(list, i, 1, coll)); else if (a === 'hide') toggleHide(coll, o);
+    else if (a === 'del') askConfirm('"' + o.name + '"' + (kind === 'syl' ? ' এবং তার ভেতরের সব বই' : '') + ' স্থায়ীভাবে মুছে যাবে।', async () => { try { kind === 'syl' ? await removeSyl(o) : await removeBook(o); clearCache(); render(); toast('মুছে ফেলা হয়েছে', 'success'); } catch (er) { toast('ত্রুটি: ' + (er.message || er), 'error'); } });
+    return;
+  }
+  const op = t.closest('.ad-open'); if (op && t.closest('.ie')) return; if (op) { e.preventDefault(); const it = op.closest('.ad-it'); if (it.classList.contains('cust') && it.classList.contains('sel')) return; return goItem(it); }
+  const tab = t.closest('[data-tab]'); if (tab) { e.preventDefault(); nav.tab = nav.tab === tab.dataset.tab ? '' : tab.dataset.tab; render(); if (nav.tab) $('below').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  const bt = t.closest('button[id]'); if (bt && ACT[bt.id]) { e.preventDefault(); ACT[bt.id](bt); }
+});
+/* ---- typing on the text itself: saved when you click away (Enter = done, Esc = undo) ---- */
+const IE_COLL = { home: 'home_buttons', syl: 'section_buttons', sub: 'sub_buttons' };
+const IE_OBJ = (kind, id) => kind === 'home' ? homes.find(x => x.id === id) : kind === 'syl' ? syls.find(x => x.id === id) : books.find(x => x.id === id);
+async function ieCommit(el) {
+  const [kind, id, field, sub] = el.dataset.ie.split('|'), old = el.dataset.o || '', val = el.textContent.replace(/\s+/g, ' ').trim();
+  if (val === old) { el.textContent = old; return; }
+  const needName = (kind === 'home' || kind === 'syl' || kind === 'sub') && field === 'name';
+  if (needName && !val) { el.textContent = old; toast('নাম খালি রাখা যাবে না', 'error'); return; }
+  try {
+    if (kind === 'lab') {
+      await saveLabs({ [id]: val }); const now = lab(id);
+      document.querySelectorAll('[data-ie="lab|' + id + '|"]').forEach(x => { x.textContent = now; x.dataset.o = now; });
+    } else if (kind === 'ex') {
+      const b = getB(), extra = (b.extra || []).map(x => Object.assign({}, x)); if (!extra[+field]) return;
+      extra[+field][sub] = val; await updateDoc(doc(db, 'sub_buttons', id), { extra }); b.extra = extra;
+    } else if (kind === 'grp') {
+      const g = groupBooks((id === 't' ? topicsOf : booksOf)(nav.syl))[+field]; if (!g) return;
+      await commitBatches(g.items.map(b => (bt) => bt.update(doc(db, 'sub_buttons', b.id), { grp: val }))); g.items.forEach(b => { b.grp = val; });
+    } else {
+      const o = IE_OBJ(kind, id); if (!o) return;
+      let v = val; if (field === 'cardTitle' && v === (o.mode === 'parts' || tmode(o) === 'parts' ? lab('parts_t') : '')) v = '';
+      await updateDoc(doc(db, IE_COLL[kind], id), { [field]: v }); o[field] = v;
+    }
+    el.dataset.o = el.textContent = kind === 'lab' ? lab(id) : val;
+    clearCache(); renderSideNav(); renderCrumbs(); toast('সেভ হয়েছে', 'success');
+  } catch (er) { el.textContent = old; toast('ত্রুটি: ' + (er.message || er), 'error'); }
+}
+[$('view-site'), $('view-labels'), $('view-settings')].forEach(V => {
+  V.addEventListener('keydown', (e) => { const x = e.target.closest && e.target.closest('.epi'); if (x && e.key === 'Enter') { e.preventDefault(); x.blur(); } });
+  V.addEventListener('paste', (e) => { const x = e.target.closest && e.target.closest('.epi'); if (!x) return; e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData.getData('text/plain') || '').replace(/\s+/g, ' ')); }); V.addEventListener('focusout', (e) => { const el = e.target.closest && e.target.closest('.ie'); if (el) ieCommit(el); });
+V.addEventListener('keydown', (e) => {
+  const el = e.target.closest && e.target.closest('.ie'); if (!el) return;
+  if (e.key === 'Enter') { e.preventDefault(); el.blur(); } else if (e.key === 'Escape') { el.textContent = el.dataset.o || ''; el.blur(); }
+});
+V.addEventListener('paste', (e) => { const el = e.target.closest && e.target.closest('.ie'); if (!el) return; e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData.getData('text/plain') || '').replace(/\s+/g, ' ')); }); });
+$('view-site').addEventListener('input', (e) => { if (e.target.closest && e.target.closest('#pTitle')) fitTitle(); });
+$('view-site').addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('ad-open')) { e.preventDefault(); e.target.click(); } });
+$('view-site').addEventListener('change', (e) => {
+  if (e.target.id === 'tocOn') { const b = getB(), f = nav.tab === 'read' ? 'readNoToc' : 'noteNoToc', v = !e.target.checked; updateDoc(doc(db, 'sub_buttons', b.id), { [f]: v }).then(() => { b[f] = v; clearCache(); toast(v ? 'সূচিপত্র বন্ধ' : 'সূচিপত্র চালু', 'success'); }).catch(er => toast('ত্রুটি: ' + (er.message || er), 'error')); return; } if (e.target.id === 'resFile' && e.target.files[0]) doUpload(e.target.files[0]); });
+
+/* ---- live previews shown in the "what do you want to add?" window ---- */
+const PV = {
+  book:  ['বই', 'বইয়ের তালিকায় নম্বর সহ বসে। বইয়ে ঢুকলে পরিচিতি কার্ড ও পড়া / PDF / নোট / অডিও / ভিডিও বাটন।'],
+  text:  ['শুধু লেখা', 'ক খ গ সহ ধূসর লেখা, এক লাইনে। লেখা লম্বা হলে চাপলে পুরো লেখা আলাদা পেজে খোলে।'],
+  page:  ['পেজওয়ালা সারি', 'ক্লিক করলে পরিচিতি কার্ড ও ৫টি বাটন খোলে, বইয়ের মতো।'],
+  list:  ['তালিকা (ক খ গ)', 'ক্লিক করলে একটা কার্ড খোলে। কার্ডের প্রতিটি সারিতে চাপলে একটা লেখা খোলে।'],
+  parts: ['খণ্ডওয়ালা (১ম, ২য় খণ্ড)', 'ক্লিক করলে খণ্ডের কার্ড খোলে। প্রতিটি খণ্ড বইয়ের মতো পেজ।'],
+  doc:   ['লেখাসহ শিরোনাম', 'ক্লিক করলে সরাসরি লেখা খোলে, চাইলে সূচিপত্রসহ।']
+};
+function pvHtml(type) {
+  const top = (t) => '<div class="pv-top"><i></i><b>' + esc(t) + '</b></div>';
+  const card = (title, rows) => groupCardHtml({ title, rows, anim: false, tip: '' });
+  const r = (n, label, href) => ({ n, label, href: href === false ? '' : '#', id: 'x' + n });
+  const info = infoCardHtml([['বইয়ের নাম', 'তাওহীদ'], ['লেখক', 'আবুল আ’লা'], ['মূল্য', '৩৫০ টাকা']]);
+  const btns = '<div class="p-stack ico" style="margin-top:calc(var(--p)*2)">' + boxBtn({ label: lab('b_btn_read'), href: '#', anim: false, icon: 'book' }) + boxBtn({ label: lab('b_btn_pdf'), href: '#', anim: false, icon: 'file' }) + '</div>';
+  const first = { book: card('ঈমান-আকীদাহ', [r(1, 'তাওহীদ, রিসালাত ও আখিরাত'), r(2, 'ঈমানের হাকীকত')]),
+    text: card('আল হাদিস', [r('ক', 'এক থেকে ৫০ হাদিস মুখস্থ করা এবং আমল করা, প্রতিটির ব্যাখ্যাসহ জানা', false), r('খ', 'দৈনিক পাঠ', false)]),
+    page: card('আল কুরআন', [r('ক', 'তাফহীমুল কুরআন'), r('খ', 'সূরা আল ফাতিহা')]),
+    list: card('আল হাদিস', [r('ক', 'চল্লিশ হাদিস'), r('খ', 'রাহে আমল')]),
+    parts: card('আল ফিকহ', [r('ক', 'আসান ফেকাহ'), r('খ', 'ইসলামী আইন')]),
+    doc: card('আল কুরআন', [r('ক', 'সূরা আল ফিল থেকে আন নাস'), r('খ', 'দৈনিক তিলাওয়াত')]) }[type];
+  const second = { book: top('তাওহীদ') + '<div class="pv-body">' + info + btns + '</div>',
+    text: top('আল হাদিস') + '<div class="pv-body"><div class="p-fulltext">এক থেকে ৫০ হাদিস মুখস্থ করা এবং আমল করা, প্রতিটির ব্যাখ্যাসহ জানা</div></div>',
+    page: top('তাফহীমুল কুরআন') + '<div class="pv-body">' + info + btns + '</div>',
+    list: top('চল্লিশ হাদিস') + '<div class="pv-body">' + card('আল হাদিস', [r('ক', 'প্রথম হাদিস'), r('খ', 'দ্বিতীয় হাদিস'), r('গ', 'তৃতীয় হাদিস')]) + '</div>',
+    parts: top('আসান ফেকাহ') + '<div class="pv-body">' + card(lab('parts_t'), [r(1, 'প্রথম খণ্ড'), r(2, 'দ্বিতীয় খণ্ড'), r(3, 'তৃতীয় খণ্ড')]) + '</div>',
+    doc: top('সূরা আল ফিল') + '<div class="pv-body"><div class="pv-doc"><b></b><i></i><i></i><i class="s"></i><b></b><i></i><i class="s"></i></div></div>' }[type];
+  return '<div class="pv" aria-hidden="true"><div class="pv-scr s1">' + top('কর্মী সিলেবাস') + '<div class="pv-body">' + first + '</div></div><div class="pv-scr s2">' + second + '</div><span class="pv-cur"></span></div>';
+}
+/* ---- adding: you build the new thing on a live copy of the page ---- */
+const AE = (f, ph) => '<span class="ie ae" contenteditable="true" spellcheck="false" data-f="' + f + '" data-ph="' + esc(ph) + '"></span>';
+const barStatic = (n) => '<div class="p-bar"><span class="p-fil"><span>' + esc(lab('bk_all')) + '</span><b class="p-bd"><i>' + n2(n) + '</i></b></span><div class="p-filters"><span class="p-fil"><span>' + esc(lab('bk_read')) + '</span><b class="p-bd"><i>' + n2(0) + '</i></b></span><span class="p-fil"><span>' + esc(lab('bk_unread')) + '</span><b class="p-bd"><i>' + n2(n) + '</i></b></span></div></div>';
+const rowNew = (n, name, note, plain) => '<div class="p-gr-row new' + (plain ? ' plain' : '') + '"><span class="p-lnk"><i class="n">' + n + '</i><span class="tx"><span class="p-t">' + name + '</span>' + (note ? '<small class="p-sy">' + note + '</small>' : '') + '</span></span><span class="p-chk"></span></div>';
+const rowOld = (n, name) => '<div class="p-gr-row old"><span class="p-lnk"><i class="n">' + n + '</i><span class="tx"><span class="p-t">' + esc(name) + '</span></span></span><span class="p-chk on">' + RI.tick + '</span></div>';
+const cardNew = (title, rows, total) => '<section class="p-gr"><h3 class="p-t"><span>' + title + '</span><span>' + totalHtml(total) + '</span></h3>' + rows + '</section>';
+function addCanvas(t) {
+  const s = getS(), b = getB(), h = getH(), tpl = ['text', 'page', 'doc', 'list', 'parts'].includes(t);
+  let main = '';
+  if (t === 'syl') main = PH(stageTop(esc(h.name)), '', '<div class="p-stack btns"><div class="p-btn new"><span class="tx"><span class="p-t">' + AE('f1', 'বাটনের নাম') + '</span><small>' + AE('f2', 'বন্ধনীর লেখা (ঐচ্ছিক)') + '</small><small class="p-sy">' + AE('f4', 'ছোট লেখা (ঐচ্ছিক)') + '</small></span></div></div>');
+  else if (t === 'book') main = PH(stageTop(esc(s.name)), barStatic(booksOf(s.id).length + 1), '<div class="p-stack">' + cardNew(AE('f1', 'কার্ডের নাম'), rowNew(n2(booksOf(s.id).length + 1), AE('f2', 'বইয়ের নাম'), AE('f4', 'ছোট লেখা (ঐচ্ছিক)')), 1) + '</div>');
+  else if (tpl) main = PH(stageTop(esc(s.name)), barStatic(topicsOf(s.id).length + 1), '<div class="p-stack">' + cardNew(AE('f1', 'কার্ডের নাম'), rowNew('ক', AE('f2', t === 'text' ? 'এখানে লিখুন' : 'সারির নাম'), AE('f4', 'ছোট লেখা (ঐচ্ছিক)'), t === 'text'), 1) + '</div>');
+  else { // part / item: a new row in the card of its parent
+    const kids = kidsOf(b.id), pt = t === 'part';
+    main = PH(stageTop(esc(b.name)), barStatic(kids.length + 1), '<div class="p-stack">' + cardNew(esc(b.cardTitle || (pt ? lab('parts_t') : (b.grp || ''))), kids.map((c, i) => rowOld(pt ? n2(i + 1) : letterOf(i).replace(')', ''), c.name)).join('') + rowNew(pt ? n2(kids.length + 1) : letterOf(kids.length).replace(')', ''), AE('f1', pt ? 'খণ্ডের নাম' : 'লেখার নাম'), AE('f4', 'ছোট লেখা (ঐচ্ছিক)')), kids.length + 1) + '</div>');
+  }
+  const second = (t === 'list' || t === 'parts') ? '<div class="ac-arrow"><i class="fa-solid fa-arrow-down"></i></div>' + PH(stageTop(esc('…')), barStatic(1), '<div class="p-stack">' + cardNew(AE('f3', t === 'parts' ? lab('parts_t') : 'ভেতরের কার্ডের নাম'), rowOld(t === 'parts' ? n2(1) : 'ক', '…'), 1) + '</div>') : '';
+  const names = (t === 'book' || tpl) ? cardList() : [];
+  const chips = (names.length ? '<div class="ac-chips" data-f="f1">' + names.map(n => '<button type="button" class="chip" data-pick="f1" data-v="' + esc(n) + '">' + esc(n) + '</button>').join('') + '</div>' : '') +
+    '<div class="ac-chips"><button type="button" class="chip" data-sy="in">' + esc(lab('sy_in')) + '</button><button type="button" class="chip" data-sy="out">' + esc(lab('sy_out')) + '</button></div>';
+  return '<div class="ph-add">' + main + second + '</div>' + chips + '<button type="button" class="btn btn-primary add-go" id="addGo" data-type="' + t + '"><i class="fa-solid fa-plus"></i> যোগ করুন</button>';
+}
+function openAdd(kind, type) {
+  const ttl = $('addTitle'), body = $('addBody');
+  const t = kind === 'home' ? 'syl' : (kind === 'part' || kind === 'item') ? kind : type;
+  if (!t) { ttl.innerHTML = '<i class="fa-solid fa-plus"></i> কী যোগ করবেন?';
+    body.innerHTML = '<div class="add-tiles">' + ['book', 'text', 'page', 'list', 'parts', 'doc'].map(k => '<div class="add-tile" role="button" tabindex="0" data-addtype="' + k + '">' + pvHtml(k) + '<span class="at-txt"><b>' + PV[k][0] + '</b><small>' + PV[k][1] + '</small></span></div>').join('') + '</div>'; }
+  else { ttl.innerHTML = '<i class="fa-solid fa-plus"></i> ' + ({ syl: 'নতুন সিলেবাস বাটন', book: 'নতুন বই', part: 'নতুন খণ্ড', item: 'নতুন লেখা' }[t] || PV[t][0]);
+    body.innerHTML = addCanvas(t); }
+  openModal('addModal');
+  const f = body.querySelector('.ae'); if (f) setTimeout(() => f.focus(), 80);
+}
+$('addBody').addEventListener('click', (e) => {
+  const t = e.target.closest('[data-addtype]'); if (t) { openAdd('syl', t.dataset.addtype); return; }
+  const pk = e.target.closest('[data-pick]'); if (pk) { const f = $('addBody').querySelector('.ae[data-f="' + pk.dataset.pick + '"]'); if (f) { f.textContent = pk.dataset.v; f.focus(); } return; }
+  const sy = e.target.closest('[data-sy]'); if (sy) { const f = $('addBody').querySelector('.ae[data-f="f4"]'); if (f) { f.textContent = lab(sy.dataset.sy === 'in' ? 'sy_in' : 'sy_out'); f.focus(); } return; }
+  const go_ = e.target.closest('#addGo'); if (go_) doAdd(go_);
+});
+$('addBody').addEventListener('keydown', (e) => {
+  const x = e.target.closest && e.target.closest('[data-addtype]'); if (x && (e.key === 'Enter' || e.key === ' ') && e.target === x) { e.preventDefault(); openAdd('syl', x.dataset.addtype); return; }
+  const ae = e.target.closest && e.target.closest('.ae'); if (!ae || e.key !== 'Enter') return;
+  e.preventDefault(); const all = [...$('addBody').querySelectorAll('.ae')], i = all.indexOf(ae); if (all[i + 1]) all[i + 1].focus(); else $('addGo').click();
+});
+$('addBody').addEventListener('paste', (e) => { const el = e.target.closest && e.target.closest('.ae'); if (!el) return; e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData.getData('text/plain') || '').replace(/\s+/g, ' ')); });
+function doAdd(btn) {
+  const t = btn.dataset.type, s = getS(), b = getB(), h = getH(), v = {};
+  $('addBody').querySelectorAll('.ae').forEach(x => { v[x.dataset.f] = x.textContent.replace(/\s+/g, ' ').trim(); });
+  const need = { syl: 'f1', part: 'f1', item: 'f1', book: 'f2' }[t] || 'f2';
+  if (!v[need]) { const x = $('addBody').querySelector('.ae[data-f="' + need + '"]'); if (x) x.focus(); return toast('নামটা লিখুন', 'error'); }
+  const save = async (coll, d, list, msg) => { const r = await addDoc(collection(db, coll), d); list.push({ id: r.id, ...d }); closeModal('addModal'); clearCache(); render(); toast(msg, 'success'); };
+  const syl = v.f4 || '';
+  busy(btn, 'যোগ হচ্ছে...', () => {
+    if (t === 'syl') return save('section_buttons', { v: 3, homeId: h.id, name: v.f1, sub: v.f2 || '', syl, order: nextOrder(sylsOf(h.id)), hidden: false, custom: true }, syls, 'সিলেবাস বাটন যোগ হয়েছে');
+    if (t === 'part' || t === 'item') return save('sub_buttons', { v: 3, kind: t, parentId: b.id, homeId: b.homeId, sectionId: b.sectionId, name: v.f1, syl, order: nextOrder(kidsOf(b.id)), hidden: false }, books, 'যোগ হয়েছে');
+    if (t === 'book') return save('sub_buttons', { v: 3, homeId: s.homeId, sectionId: s.id, name: v.f2, grp: v.f1 || '', syl, order: nextOrder(booksOf(s.id)), hidden: false }, books, 'বই যোগ হয়েছে');
+    return save('sub_buttons', { v: 3, kind: 'topic', mode: t, homeId: s.homeId, sectionId: s.id, name: v.f2, grp: v.f1 || '', cardTitle: v.f3 || '', syl, order: nextOrder(topicsOf(s.id)), hidden: false }, books, 'সারি যোগ হয়েছে');
+  });
+}
+$('homeNav').addEventListener('click', (e) => { const b = e.target.closest('[data-home]'); if (b) go(b.dataset.home); });
+$('restoreBtn').addEventListener('click', () => busy($('restoreBtn'), 'ফিরিয়ে আনা হচ্ছে...', async () => {
+  const d = { v: 3, name: 'সিলেবাস দেখুন', kind: 'syl', order: homes.reduce((m, x) => Math.min(m, x.order || 0), 1) - 1, hidden: false };
+  const r = await addDoc(collection(db, 'home_buttons'), d); homes.push({ id: r.id, ...d }); homes.sort(byOrder);
+  const sy = [['কর্মী সিলেবাস', ''], ['রুকন সিলেবাস', '(স্বল্প শিক্ষিত)'], ['রুকন সিলেবাস', '(শিক্ষিত)'], ['বাৎসরিক রুকন পাঠ্য', '(স্বল্প শিক্ষিত)'], ['বাৎসরিক রুকন পাঠ্য', '(শিক্ষিত)']];
+  for (let i = 0; i < sy.length; i++) { const e = { v: 3, homeId: r.id, name: sy[i][0], sub: sy[i][1], order: i + 1, hidden: false }; const q = await addDoc(collection(db, 'section_buttons'), e); syls.push({ id: q.id, ...e }); }
+  clearCache(); go(r.id); toast('"সিলেবাস দেখুন" ও ৫টি সিলেবাস ফিরে এসেছে', 'success');
+}));
+$('newHomeBtn').addEventListener('click', () => {
+  const name = prompt('নতুন হোম বাটনের নাম:'); if (!name || !name.trim()) return;
+  busy($('newHomeBtn'), 'যোগ হচ্ছে...', async () => { const d = { v: 3, name: name.trim(), kind: 'soon', order: nextOrder(homes), hidden: false }; const r = await addDoc(collection(db, 'home_buttons'), d); homes.push({ id: r.id, ...d }); clearCache(); go(r.id); toast('হোম বাটন যোগ হয়েছে — "ক্লিক করলে কী খুলবে" ঠিক করুন', 'success'); });
+});
+const cnRow = (t, i) => '<div class="p-gr-row"><span class="p-lnk"><i class="n">' + letterOf(i) + '</i><span class="tx"><span class="p-t">' + EP('cn' + i, t, 'কার্ডের নাম').replace('class="epi"', 'class="epi cn-name"') + '</span></span></span><button type="button" class="cn-x" data-cnx="1" aria-label="মুছুন"><i class="fa-solid fa-xmark"></i></button></div>';
+function renderCardNames() {
+  $('cnList').innerHTML = cardNames.map(cnRow).join(''); $('cnCount').innerHTML = totalHtml(cardNames.length);
+  $('setHomeBtns').innerHTML = '<div class="p-stack btns">' + homes.slice(0, 3).map(h => asDiv(boxBtn({ label: h.name, href: '#', anim: false }))).join('') + '</div>';
+}
+const cnNames = () => [...new Set([...document.querySelectorAll('#cnList .cn-name')].map(x => (x.textContent || '').replace(/\s+/g, ' ').trim()).filter(Boolean))].slice(0, 60);
+$('cnAdd').addEventListener('click', () => { const d = document.createElement('div'); d.innerHTML = cnRow('', $('cnList').children.length); $('cnList').appendChild(d.firstChild); $('cnList').lastChild.querySelector('.epi').focus(); });
+$('cnList').addEventListener('click', (e) => { const x = e.target.closest('[data-cnx]'); if (!x) return; x.closest('.p-gr-row').remove(); [...document.querySelectorAll('#cnList .n')].forEach((n, i) => { n.textContent = letterOf(i); }); $('cnCount').innerHTML = totalHtml(cnNames().length); });
+$('settingsForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const nm = ($('s_siteName').textContent || '').replace(/\s+/g, ' ').trim(), sub = ($('s_subtitle').textContent || '').replace(/\s+/g, ' ').trim(), cn = cnNames();
+  busy($('settingsBtn'), 'সেভ হচ্ছে...', async () => {
+    await setDoc(doc(db, 'settings', 'main'), { siteName: nm, subtitle: sub, cardNames: cn }, { merge: true });
+    cardNames = cn; $('brandName').textContent = nm || 'রুকন প্রস্তুতি'; clearCache(); renderCardNames(); toast('সেভ হয়েছে', 'success');
+  });
+});
+
+/* ================= colour combinations ================= */
+let palBoxes = [], palId = '', palAuto = { on: false, start: 0, idx0: 0 };
+const palHex = (c) => /^#[0-9a-f]{6}$/i.test(c);
+const sw = (c) => '<span class="pal-sw">' + c.map(x => '<i style="background:' + esc(x) + '"></i>').join('') + '</span>';
+function palLoad(d) {
+  if (d.paletteVer !== 3) d = {};
+  palBoxes = Array.isArray(d.paletteBoxes) ? d.paletteBoxes.filter(b => b && Array.isArray(b.c) && b.c.length === 4 && b.c.every(palHex)) : DEFAULT_PALETTES.map(b => ({ id: b.id, c: [...b.c] }));
+  palId = d.paletteId || (Array.isArray(d.palette) ? '' : palBoxes[0] ? palBoxes[0].id : '');
+  palAuto = { on: !!d.paletteAuto, start: d.paletteAutoStart || 0, idx0: d.paletteAutoIdx || 0 };
+  if (palAuto.on && palBoxes.length) { const ap = autoPalette({ paletteAuto: true, paletteBoxes: palBoxes, paletteAutoStart: palAuto.start, paletteAutoIdx: palAuto.idx0 }); const bx = palBoxes.find(b => b.c === ap); if (bx) palId = bx.id; }
+  renderPal();
+}
+function renderPal() {
+  $('palAuto').checked = palAuto.on;
+  $('palAutoNote').textContent = palAuto.on ? 'চালু আছে — ২৪ ঘণ্টা পর পর পরের বক্সের রং আসবে। কোনো বক্সে ক্লিক করলে সেটা থেকেই আবার ২৪ ঘণ্টা গণনা শুরু হবে।' : 'চালু করলে নিচের বক্সগুলো থেকে একটার পর একটা রং প্রতিদিন সাইটে ও অ্যাডমিনে বসবে।';
+  $('palCount').textContent = palBoxes.length;
+  $('palGrid').innerHTML = palBoxes.length ? palBoxes.map(b =>
+    '<div class="pal-box' + (b.id === palId ? ' on' : '') + '" data-id="' + esc(b.id) + '" role="button" tabindex="0" title="এই রংগুলো ব্যবহার করুন">' + sw(b.c) +
+    '<span class="pal-cap">' + (b.id === palId ? '<i class="fa-solid fa-circle-check"></i> চালু আছে' : 'ক্লিক করে চালু করুন') + '</span>' +
+    '<button type="button" class="pal-x" data-del="' + esc(b.id) + '" aria-label="মুছুন" title="এই বক্স মুছুন"><i class="fa-solid fa-xmark"></i></button></div>').join('')
+    : emptyBox('fa-palette', 'কোনো বক্স নেই', 'নিচে থেকে নিজের কম্বিনেশন বানান বা ডিফল্ট ফিরিয়ে আনুন');
+}
+async function palSave(extra) {
+  await setDoc(doc(db, 'settings', 'main'), Object.assign({ paletteVer: 3, paletteBoxes: palBoxes, paletteAuto: palAuto.on, paletteAutoStart: palAuto.start, paletteAutoIdx: palAuto.idx0 }, extra || {}), { merge: true });
+  try { sessionStorage.removeItem(SITE_KEY); } catch (er) { /* ignore */ }
+}
+$('palGrid').addEventListener('click', async (e) => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    e.stopPropagation(); const id = del.dataset.del;
+    return askConfirm('এই রঙের বক্সটি মুছে ফেলবেন?', async () => {
+      palBoxes = palBoxes.filter(b => b.id !== id); if (palId === id) palId = ''; renderPal();
+      try { await palSave({ paletteId: palId }); toast('বক্স মুছে ফেলা হয়েছে', 'success'); } catch (er) { toast('সেভ হয়নি: ' + (er.message || er), 'error'); }
+    });
+  }
+  const box = e.target.closest('.pal-box'); if (!box) return;
+  const b = palBoxes.find(x => x.id === box.dataset.id); if (!b) return;
+  palId = b.id; applyPalette(b.c); palSet(b.c); palAuto.start = Date.now(); palAuto.idx0 = palBoxes.indexOf(b); renderPal();
+  try { await palSave({ paletteId: b.id, palette: b.c }); toast('রং বদলানো হয়েছে', 'success'); } catch (er) { toast('সেভ হয়নি: ' + (er.message || er), 'error'); }
+});
+$('palAuto').addEventListener('change', async () => {
+  palAuto.on = $('palAuto').checked; palAuto.start = Date.now(); palAuto.idx0 = Math.max(0, palBoxes.findIndex(b => b.id === palId)); renderPal();
+  try { await palSave(); toast(palAuto.on ? 'প্রতি ২৪ ঘণ্টায় রং বদলানো চালু হয়েছে' : 'অটো রং বদল বন্ধ হয়েছে', 'success'); } catch (er) { toast('সেভ হয়নি', 'error'); }
+});
+const palCur = () => [0, 1, 2, 3].map(i => $('palIn' + i).value);
+/* one colour -> the four theme colours (page back, main, highlight, light) */
+function genPal(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  let h = 0, sat = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+  if (d) { h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = (h * 60 + 360) % 360; }
+  if (sat < 0.08) sat = 0;
+  const hsl = (H, S, L) => { const k = (n) => (n + H / 30) % 12, a = S * Math.min(L, 1 - L), f = (n) => L - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + [f(0), f(8), f(4)].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join(''); };
+  const light = hsl(h, Math.min(sat, 0.12), 0.87);
+  return [light, hsl(h, Math.min(sat, 0.62), Math.max(0.12, Math.min(l, 0.26))), hsl(h, Math.min(sat, 0.34), 0.68), light];
+}
+const PAL_BASES = ['#111111', '#103C4A', '#17493A', '#1F3C6B', '#5B1F2E', '#3F2D6B', '#7A5648', '#8A4B0F', '#0F5E5A', '#6B1D5C'];
+$('palDots').innerHTML = PAL_BASES.map(c => '<button type="button" class="pal-dot" data-base="' + c + '" style="background:' + c + '" aria-label="' + c + '"></button>').join('');
+const PAL_ROLES = ['পেজের পেছন', 'হেডার ও কার্ড', 'হাইলাইট', 'লেখা ও ব্যাজ'];
+function palPrevHtml(c) {
+  const th = '--c1:' + c[0] + ';--c2:' + c[1] + ';--c3:' + c[2] + ';--c4:' + c[3];
+  const top = (t) => '<header class="p-top"><div class="p-top-in"><span class="p-back" aria-hidden="true">' + RI.back + '</span><h1><span class="tt">' + t + '</span></h1></div></header>';
+  const bt = (t) => asDiv(boxBtn({ label: t, href: '#', anim: false }));
+  const row = (n, t, on) => '<div class="p-gr-row' + (on ? ' is-done' : '') + '"><span class="p-lnk"><i class="n">' + n + '</i><span class="tx"><span class="p-t">' + t + '</span></span></span><span class="p-chk' + (on ? ' on' : '') + '"></span></div>';
+  const p1 = '<div class="ph pv-theme" style="' + th + '"><div class="ph-in">' + top('সিলেবাস দেখুন') + '<div class="p-wrap"><div class="p-stack btns">' + bt('কর্মী সিলেবাস') + bt('রুকন সিলেবাস') + bt('রুকন প্রস্তুতি') + bt('রুকন যাচাই') + bt('বাৎসরিক রুকন পাঠ্য') + '</div></div></div></div>';
+  const p2 = '<div class="ph pv-theme" style="' + th + '"><div class="ph-in">' + top('কর্মী সিলেবাস') + '<div class="p-bar"><span class="p-fil"><span>সমস্ত</span><b class="p-bd"><i>১০</i></b></span><span class="p-filters"><span class="p-fil"><span>পঠিত</span><b class="p-bd"><i>০১</i></b></span></span></div><div class="p-wrap"><section class="p-gr"><h3 class="p-t"><span>আল কুরআন</span><span>মোট <b class="p-bd"><i>০২</i></b> টি</span></h3>' + row('ক)', 'সূরা আল ফাতিহা', true) + row('খ)', 'তাফহীমুল কুরআন', false) + row('গ)', 'কুরআন বুঝা সহজ', false) + '</section><section class="p-gr"><h3 class="p-t"><span>আল হাদিস</span><span>মোট <b class="p-bd"><i>০২</i></b> টি</span></h3>' + row('ক)', 'চল্লিশ হাদিস', true) + row('খ)', 'রাহে আমল', false) + '</section></div></div></div>';
+  const info = (k, v) => '<div><span>' + k + '</span><b><em>' + v + '</em></b></div>';
+  const p3 = '<div class="ph pv-theme" style="' + th + '"><div class="ph-in">' + top('বইয়ের নাম') + '<div class="p-wrap"><section class="p-card p-info"><h3 class="p-t">সংক্ষিপ্ত পরিচিতি</h3><div class="rows">' + info('লেখক', 'সাইয়্যেদ মওদূদী') + info('পৃষ্ঠা সংখ্যা', '৮০ পৃষ্ঠা') + info('মূল্য', '৩৫০ টাকা') + '</div></section><div class="p-stack btns">' + bt('বই পড়ুন') + bt('PDF ডাউনলোড করুন') + '</div></div></div></div>';
+  const p4 = '<div class="ph pv-theme" style="' + th + '"><div class="ph-in">' + top('বই দেখুন') + '<div class="p-bar"><span class="p-pct"><span>পড়া হয়েছে</span> <b class="p-bd"><i>৪৫%</i></b></span><span class="p-tocbtn">সূচিপত্র</span></div><div class="p-wrap"><section class="p-paper-card"><h3 class="p-t">বই দেখুন</h3><div class="p-paper"><div class="p-rich"><h1>সত্যের সাক্ষ্য</h1><p>সমস্ত প্রশংসা সেই আল্লাহ তাআলার, যিনি নিখিল বিশ্বের একমাত্র স্রষ্টা, মালিক এবং শাসক।</p><p>যিনি অসীম জ্ঞান, অনুগ্রহ ও ক্ষমতা বলে এই বিশ্বজাহান পরিচালনা করছেন।</p><p>প্রিয় বন্ধুগণ, আমরা আমাদের সম্মেলনগুলোকে দু’টো অংশে ভাগ করে থাকি।</p></div></div></section></div></div></div>';
+  return '<div class="pal-pages">' + p1 + p2 + p3 + p4 + '</div>';
+}
+const palLive = () => { const c = palCur(); $('palLive').innerHTML = c.map(x => '<i style="background:' + esc(x) + '"></i>').join(''); $('palPrev').innerHTML = palPrevHtml(c); $('palLegend').innerHTML = c.map((x, i) => '<span><i style="background:' + esc(x) + '"></i>' + toBn(i + 1) + '. ' + PAL_ROLES[i] + '</span>').join(''); };
+const palSet = (c) => { c.forEach((x, i) => { $('palIn' + i).value = x; }); palLive(); };
+[0, 1, 2, 3].forEach(i => $('palIn' + i).addEventListener('input', palLive));
+$('palBase').addEventListener('input', () => palSet(genPal($('palBase').value)));
+$('palDots').addEventListener('click', (e) => { const d = e.target.closest('[data-base]'); if (!d) return; $('palBase').value = d.dataset.base; palSet(genPal(d.dataset.base)); });
+$('palApply').addEventListener('click', () => busy($('palApply'), 'চালু হচ্ছে...', async () => {
+  const c = palCur(); if (!c.every(palHex)) return toast('৪টি রংই বেছে নিন', 'error');
+  applyPalette(c); palId = ''; palAuto.on = false; renderPal();
+  try { await palSave({ paletteId: '', palette: c }); toast('রং চালু হয়েছে', 'success'); } catch (er) { toast('সেভ হয়নি: ' + (er.message || er), 'error'); }
+}));
+palSet(genPal('#103C4A'));
+$('palAdd').addEventListener('click', () => busy($('palAdd'), 'যোগ হচ্ছে...', async () => {
+  const c = palCur(); if (!c.every(palHex)) return toast('৪টি রংই বেছে নিন', 'error');
+  palBoxes.push({ id: 'c' + Date.now().toString(36), c }); renderPal();
+  await palSave(); toast('নতুন বক্স যোগ হয়েছে — ক্লিক করে চালু করুন', 'success');
+}));
+$('palReset').addEventListener('click', () => askConfirm('সব বক্স মুছে ডিফল্ট ৫টি বক্স ফিরিয়ে আনবেন? (এখন চালু থাকা রং বদলাবে না)', async () => {
+  palBoxes = DEFAULT_PALETTES.map(b => ({ id: b.id, c: [...b.c] })); renderPal();
+  try { await palSave(); toast('ডিফল্ট বক্স ফিরে এসেছে', 'success'); } catch (er) { toast('সেভ হয়নি', 'error'); }
+}, '<i class="fa-solid fa-rotate-left"></i> হ্যাঁ, ফিরিয়ে আনুন'));
+
+/* ================= labels: every text of the site ================= */
+function renderLabels() {
+  const L = (k) => ILE(k);
+  const top = (h) => '<header class="p-top"><div class="p-top-in"><span class="p-back" aria-hidden="true">' + RI.back + '</span><h1><span class="tt">' + h + '</span></h1></div></header>';
+  const btn = (inner, ico) => asDiv(boxBtn({ label: '@@L@@', href: '#', anim: false, icon: ico || '' })).replace('@@L@@', inner);
+  const grp = (head, rows) => '<section class="p-gr"><h3 class="p-t"><span>দাওয়াত ও তাবলিগ</span><span>' + head + '</span></h3>' + rows + '</section>';
+  const row = (n, t, sy) => '<div class="p-gr-row"><span class="p-lnk"><i class="n">' + n + '</i><span class="tx"><span class="p-t">' + t + '</span>' + (sy ? '<small class="p-sy">' + sy + '</small>' : '') + '</span></span><span class="p-chk">' + (sy === 1 ? '' : '') + '</span></div>';
+  const msg = (t) => '<div class="lab-msg">' + t + '</div>';
+  const pg = (name, body) => '<div class="lab-pg"><div class="lab-name">' + name + '</div><div class="ph"><div class="ph-in">' + body + '</div></div></div>';
+  const ro = (k) => '<span class="p-bd">১২</span>';
+  const pages = [
+    pg('হোম পেজ', top('রুকন প্রস্তুতি') + '<div class="p-wrap"><div class="lab-empty"><b>' + L('home_empty_t') + '</b><small>' + L('home_empty_s') + '</small></div></div>'),
+    pg('বাটনের ভেতরের পেজ', top('সিলেবাস দেখুন') + '<div class="p-wrap"><div class="p-card lab-cnt">' + L('sec_count') + '</div>' + msg(L('sec_empty')) + '<div class="lab-empty"><b>' + L('soon_t') + '</b><small>' + L('soon_s') + '</small></div></div>'),
+    pg('বইয়ের তালিকা পেজ', top('কর্মী সিলেবাস') + '<div class="p-bar"><span class="p-fil"><span>' + L('bk_all') + '</span>' + ro() + '</span><span class="p-filters"><span class="p-fil"><span>' + L('bk_read') + '</span>' + ro() + '</span><span class="p-fil"><span>' + L('bk_unread') + '</span>' + ro() + '</span></span></div><div class="p-wrap"><div class="p-card lab-cnt">' + L('bk_count') + '</div>' +
+      grp(L('bk_total'), row('০১', 'তাওহীদ, রিসালাত ও আখিরাত', L('sy_in')) + row('০২', 'ঈমানের হাকীকত', L('sy_out'))) +
+      '<div class="lab-more"><span class="chip">' + L('more') + '</span><span class="chip">' + L('less') + '</span></div>' + msg(L('bk_empty')) + msg(L('bk_empty_f')) + '<div class="lab-tip">' + L('bk_tick') + '</div><div class="lab-tip">' + L('to_top') + '</div></div>'),
+    pg('বইয়ের পেজ', top('বইয়ের নাম') + '<div class="p-wrap"><section class="p-card p-info"><h3 class="p-t">' + L('b_info') + '</h3><div class="rows">' + [['b_name', 'তাফহীমুল কুরআন'], ['b_author', 'সাইয়্যেদ মওদূদী'], ['b_trans', 'আবুল'], ['b_pub', 'মওদূদী'], ['b_pages', '৮০ পৃষ্ঠা'], ['b_price', '৩৫০ টাকা']].map(r => '<div><span>' + L(r[0]) + '</span><b><em>' + r[1] + '</em></b></div>').join('') + '</div></section><div class="p-stack btns">' +
+      [['b_btn_read', 'read'], ['b_btn_pdf', 'pdf'], ['b_btn_note', 'note'], ['b_btn_audio', 'audio'], ['b_btn_video', 'video']].map(r => btn(L(r[0]), r[1])).join('') + '</div>' + msg(L('b_missing')) + msg(L('b_no_pdf')) + '</div>'),
+    pg('পড়া / নোট / অডিও / ভিডিও পেজ', top(L('v_read')) + '<div class="p-bar"><span class="p-fil"><span>' + L('v_pct') + '</span><span class="p-bd">০</span></span><span class="p-filters"><span class="p-fil"><span>' + L('v_toc') + '</span></span></span></div><div class="p-wrap">' +
+      ['v_note', 'v_audio', 'v_video'].map(k => '<div class="lab-tip">' + L(k) + '</div>').join('') + msg(L('v_empty')) + btn(L('v_dl')) + btn(L('v_next')) + '</div>'),
+    pg('লগইন পেজ', '<div class="p-wrap lab-login"><div class="lab-tabs"><span>' + L('lg_tab_login') + '</span><span>' + L('lg_tab_sign') + '</span></div><b class="lab-h">' + L('lg_welcome') + '</b><small>' + L('lg_welcome_s') + '</small><b class="lab-h">' + L('lg_new') + '</b><small>' + L('lg_new_s') + '</small>' +
+      ['lg_name_ph', 'lg_email_ph', 'lg_pass_ph'].map(k => '<div class="lab-in">' + L(k) + '</div>').join('') + btn(L('lg_btn_login')) + btn(L('lg_btn_sign')) + ['lg_e_exists', 'lg_e_nouser', 'lg_e_pass', 'lg_e_mail', 'lg_e_short', 'lg_e_name', 'lg_e_net'].map(k => '<div class="lab-tip">' + L(k) + '</div>').join('') + '</div>'),
+    pg('সাধারণ লেখা', '<div class="p-wrap">' + msg(L('load_err')) + ['u_pages', 'u_taka', 'parts_t', 'ago_now', 'ago_min', 'ago_hr', 'ago_day'].map(k => '<div class="lab-tip">' + L(k) + '</div>').join('') + '</div>'),
+    pg('অ্যাডমিন প্যানেল', '<div class="p-wrap lab-adm"><small>' + L('ad_g1') + '</small><b>' + L('ad_newhome') + '</b><small>' + L('ad_g2') + '</small>' + ['ad_labels', 'ad_colors', 'ad_users', 'ad_site', 'ad_view'].map(k => '<b>' + L(k) + '</b>').join('') + '</div>')
+  ];
+  $('labList').innerHTML = pages.join('');
+}
+$('labReset').addEventListener('click', () => askConfirm('সব লেখা আগের (ডিফল্ট) লেখায় ফিরে যাবে। এগিয়ে যাবেন?', async () => { LABELS.forEach(l => { labWork[l.k] = l.d; }); await persistLabs(); renderLabels(); toast('ডিফল্ট লেখা ফিরে এসেছে', 'success'); }, '<i class="fa-solid fa-rotate-left"></i> হ্যাঁ, ফেরান'));
+
+/* ================= users & activity ================= */
+const doneCount = (u) => Object.values(u.doneBooks || {}).filter(Boolean).length;
+function userStats(u) {
+  const rs = reads.filter(r => r.uid === (u.uid || u.id));
+  return { rs, distinct: rs.length, total: rs.reduce((n, r) => n + (r.count || 0), 0), streak: streakOf(u.activeDays || []) };
+}
+function renderUsers() {
+  const today = dayKey();
+  $('navUsers').textContent = users.length;
+  $('uTotal').textContent = users.length;
+  $('uToday').textContent = users.filter(u => (u.activeDays || []).includes(today)).length;
+  $('uReads').textContent = reads.reduce((n, r) => n + (r.count || 0), 0);
+  const agg = {};
+  reads.forEach(r => { const a = agg[r.noteId] || (agg[r.noteId] = { name: r.name, sec: r.sectionName, n: 0, u: 0 }); a.n += r.count || 0; a.u++; });
+  const top = Object.values(agg).sort((a, b) => b.n - a.n).slice(0, 5);
+  $('uTop').innerHTML = top.length ? top.map((t, i) => '<div class="rrow"><i class="no">' + toBn(i + 1) + '</i><span><b>' + esc(t.name) + '</b><small>' + esc(t.sec) + '</small></span><span class="utag">' + toBn(t.n) + ' বার · ' + toBn(t.u) + ' জন</span></div>').join('')
+    : '';
+  const q = $('uSearch').value.trim().toLowerCase();
+  const list = users.filter(u => !q || ((u.name || '') + ' ' + (u.email || '')).toLowerCase().includes(q))
+    .sort((a, b) => (b.lastLoginAt || 0) - (a.lastLoginAt || 0));
+  $('uList').innerHTML = list.length ? list.map(u => {
+    const st = userStats(u);
+    return '<div class="urow" data-u="' + esc(u.id) + '">' + avatarHtml(u.name || u.email, u.photoURL, 'uav').replace('p-avatar', '') +
+      '<div><b>' + esc(u.name || '(নাম নেই)') + '</b><small>' + esc(u.email || '') + '</small><small>শেষ লগইন: ' + esc(ago(u.lastLoginAt)) + '</small></div>' +
+      '<div style="text-align:right"><span class="utag">' + toBn(st.distinct) + ' নোট</span><span class="utag">' + toBn(st.streak) + ' দিন টানা</span></div></div>';
+  }).join('') : emptyBox('fa-users', 'কোনো ইউজার নেই', 'কেউ লগইন করলে এখানে দেখা যাবে');
+}
+$('uSearch').addEventListener('input', renderUsers);
+$('uList').addEventListener('click', (e) => {
+  const row = e.target.closest('.urow'); if (!row) return;
+  const u = users.find(x => x.id === row.dataset.u); if (!u) return;
+  const st = userStats(u);
+  const rs = st.rs.slice().sort((a, b) => (b.lastAt || 0) - (a.lastAt || 0));
+  $('umTitle').textContent = u.name || u.email || 'ইউজার';
+  $('umBody').innerHTML =
+    '<p style="color:var(--soft);margin-bottom:12px;word-break:break-all">' + esc(u.email || '') + '</p>' +
+    '<div class="stat-row" style="grid-template-columns:repeat(2,1fr)">' +
+    '<div class="stat"><span>যোগ দিয়েছে</span><b style="font-size:1.05rem">' + esc(fmtDate(u.createdAt)) + '</b></div>' +
+    '<div class="stat"><span>শেষ লগইন</span><b style="font-size:1.05rem">' + esc(ago(u.lastLoginAt)) + '</b></div>' +
+    '<div class="stat"><span>খোলা বই / মোট খোলা</span><b style="font-size:1.4rem">' + toBn(st.distinct) + ' / ' + toBn(st.total) + '</b></div>' +
+    '<div class="stat"><span>সক্রিয় দিন / টানা</span><b style="font-size:1.4rem">' + toBn((u.activeDays || []).length) + ' / ' + toBn(st.streak) + '</b></div></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn btn-ghost" id="umPass"><i class="fa-solid fa-key"></i> নতুন পাসওয়ার্ড দিন</button><button class="btn btn-danger" id="umDel"><i class="fa-solid fa-trash"></i> ইউজার মুছুন</button></div>' +
+    '<h3 style="margin:6px 0">কোন কোন বই খুলেছে</h3>' +
+    (rs.length ? rs.map(r => '<div class="rrow"><span><b>' + esc(r.name) + '</b><small>' + esc([r.homeName, r.sectionName].filter(Boolean).join(' › ')) + '</small></span><span style="text-align:right">' + toBn(r.count || 1) + ' বার<small>' + esc(ago(r.lastAt)) + '</small></span></div>').join('')
+      : '');
+  openModal('userModal');
+  $('umPass').onclick = () => {
+    const np = prompt('"' + (u.name || u.email) + '" এর নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর):');
+    if (!np) return;
+    if (np.length < 6) { toast('কমপক্ষে ৬ অক্ষর দিন', 'error'); return; }
+    busy($('umPass'), 'সেভ হচ্ছে...', async () => {
+      const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      const passHash = await hashPw(np, salt);
+      await setDoc(doc(db, 'users', u.id), { salt, passHash }, { merge: true });
+      toast('পাসওয়ার্ড বদলানো হয়েছে', 'success');
+    });
+  };
+  $('umDel').onclick = () => askConfirm('"' + (u.name || u.email) + '" ইউজারটি মুছে ফেলবেন? তার পড়ার ইতিহাসও মুছে যাবে।', async () => {
+    const mine = reads.filter(r => r.uid === (u.uid || u.id));
+    for (const r of mine) await deleteDoc(doc(db, 'reads', (u.uid || u.id) + '_' + r.noteId));
+    await deleteDoc(doc(db, 'users', u.id));
+    users = users.filter(x => x.id !== u.id); reads = reads.filter(r => r.uid !== (u.uid || u.id));
+    closeModal('userModal'); renderUsers(); toast('ইউজার মুছে ফেলা হয়েছে', 'success');
+  });
+});
+
+
+
+/* ================= start ================= */
+async function start() {
+  try { await loadAll(); }
+  catch (err) { console.error(err); window.showAdminError && window.showAdminError(err.message || String(err)); }
+}
+start();
+</script>
+</body>
+</html>

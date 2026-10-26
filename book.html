@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>বই</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body">
+<main class="p-wrap" id="app"></main>
+<script type="module">
+import { db, getDoc, doc, collection, getDocs, query, where } from "./assets/firebase.js";
+import { requireUser, touchUser, topHtml, setTop, sylNote, infoCardHtml, infoRows, boxBtn, loaderHtml, msgHtml, driveDl, clampAll, qs, esc, toBn, T } from "./assets/app.js";
+
+const app = document.getElementById('app');
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: '', back: 'index.html' }));
+app.innerHTML = loaderHtml(4);
+const user = await requireUser(); touchUser(user);
+const bid = qs('b');
+const toast = (t) => { document.querySelector('.p-toast')?.remove(); const n = document.createElement('div'); n.className = 'p-toast'; n.textContent = t; document.body.appendChild(n); setTimeout(() => n.remove(), 2600); };
+try {
+  if (!bid) throw new Error('no id');
+  const snap = await getDoc(doc(db, 'sub_buttons', bid));
+  if (!snap.exists() || snap.data().hidden) { app.innerHTML = msgHtml(T('b_missing'), true); throw 0; }
+  const b = snap.data(), enc = encodeURIComponent(bid);
+  const topic = b.kind === 'topic', part = b.kind === 'part';
+  let parent = null; if (part && b.parentId) { try { const ps = await getDoc(doc(db, 'sub_buttons', b.parentId)); if (ps.exists()) parent = ps.data(); } catch (e) {} }
+  document.title = (parent ? parent.name + ' ' : '') + (b.name || 'বই'); if (parent) setTop(parent.name, b.name, sylNote(b)); else setTop(b.name || 'বই', '', sylNote(b));
+  if (part && b.parentId) document.getElementById('pBack').href = 'list.html?b=' + encodeURIComponent(b.parentId); else if (b.sectionId) document.getElementById('pBack').href = 'books.html?s=' + encodeURIComponent(b.sectionId);
+  const rows = infoRows(b);
+  const has = (x) => !!String(x || '').replace(/<[^>]*>/g, '').trim() || /<img|<table|<video|<audio/i.test(String(x || '')) || (typeof x === 'string' && /^https?:/i.test(x));
+  const v = (t) => 'view.html?b=' + enc + '&t=' + t;
+  const head = infoCardHtml(rows);
+  app.innerHTML = head +
+    `<div class="p-stack ico">` + [
+      [b.readHtml, () => boxBtn({ label: T('b_btn_read'), href: v('read'), i: 0, icon: 'book' })],
+      [b.pdfUrl, () => boxBtn({ label: T('b_btn_pdf'), href: driveDl(b.pdfUrl), i: 1, icon: 'file' }).replace('<a ', '<a target="_blank" rel="noopener" download ')],
+      [b.noteHtml, () => boxBtn({ label: T('b_btn_note'), href: v('note'), i: 2, icon: 'notes' })],
+      [b.audioUrl, () => boxBtn({ label: T('b_btn_audio'), href: v('audio'), i: 3, icon: 'audio' })],
+      [b.videoUrl, () => boxBtn({ label: T('b_btn_video'), href: v('video'), i: 4, icon: 'video' })]
+    ].filter(([c]) => has(c)).map(([, f]) => f()).join('') + `</div>`;
+  clampAll(app);
+  app.addEventListener('click', (e) => { if (e.target.closest('a[data-nopdf]')) { e.preventDefault(); toast(T('b_no_pdf')); } });
+} catch (err) { if (err) { console.error(err); app.innerHTML = msgHtml(T('load_err'), true); } }
+</script>
+</body>
+</html>

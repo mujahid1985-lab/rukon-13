@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>লেখা</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body">
+<main class="p-wrap" id="app"></main>
+<script type="module">
+import { db, getDoc, doc } from "./assets/firebase.js";
+import { requireUser, touchUser, topHtml, setTop, loaderHtml, msgHtml, qs, esc, T } from "./assets/app.js";
+const app = document.getElementById('app');
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: '', back: 'index.html' }));
+app.innerHTML = loaderHtml(2);
+const user = await requireUser(); touchUser(user);
+try {
+  const bid = qs('b'); if (!bid) throw new Error('no id');
+  const snap = await getDoc(doc(db, 'sub_buttons', bid));
+  if (!snap.exists() || snap.data().hidden) throw new Error('missing');
+  const b = snap.data();
+  document.title = b.grp || b.name || ''; setTop(b.grp || '');
+  document.getElementById('pBack').href = 'books.html?s=' + encodeURIComponent(b.sectionId || '');
+  app.innerHTML = `<div class="p-fulltext rv" style="margin-top:calc(var(--p)*3)">${esc(b.name || '')}</div>`;
+} catch (err) { console.error(err); app.innerHTML = msgHtml(T('load_err'), true); }
+</script>
+</body>
+</html>

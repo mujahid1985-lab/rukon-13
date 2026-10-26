@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>তালিকা</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body wide">
+<main class="p-wrap" id="app"></main>
+<script type="module">
+import { db, collection, getDocs, getDoc, doc, setDoc, query, where } from "./assets/firebase.js";
+import { requireUser, touchUser, topHtml, setTop, groupCardHtml, groupBooks, topicMode, sylNote, BN_LETTERS, rollBadge, rollNum, bd, n2, markTrunc, loaderHtml, msgHtml, emptyHtml, qs, esc, toBn, T } from "./assets/app.js";
+
+const app = document.getElementById('app');
+const bar = `<div class="p-bar"><button type="button" class="p-fil" id="fA" aria-pressed="true"><span>${esc(T('bk_all'))}</span>${bd('', 'bAll')}</button><div class="p-filters"><button type="button" class="p-fil" id="fR" aria-pressed="false"><span>${esc(T('bk_read'))}</span>${bd('', 'bRead')}</button><button type="button" class="p-fil" id="fU" aria-pressed="false"><span>${esc(T('bk_unread'))}</span>${bd('', 'bUn')}</button></div></div>`;
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: '', back: 'index.html', bar }));
+app.innerHTML = loaderHtml(4);
+const user = await requireUser();
+const profile = (await touchUser(user)) || {};
+const marks = Object.assign({}, profile.doneBooks || {});
+const bid = qs('b');
+let kids = [], par = null, parts = false, filter = 'all', first = true, lastRead = null;
+const $ = (id) => document.getElementById(id);
+const letter = (k) => (BN_LETTERS[k % BN_LETTERS.length] || '') + (k >= BN_LETTERS.length ? Math.floor(k / BN_LETTERS.length) + 1 : '');
+function counts(anim) {
+  const done = kids.filter(b => marks[b.id]).length, rest = kids.length - done;
+  const dir = lastRead === null ? 1 : (done > lastRead ? 1 : -1);
+  if (anim && lastRead !== null) { rollBadge($('bRead'), n2(done), dir); rollBadge($('bUn'), n2(rest), -dir); }
+  else { rollNum($('bRead'), n2(done), 0); rollNum($('bUn'), n2(rest), 0); }
+  rollNum($('bAll'), n2(kids.length), 0); lastRead = done;
+}
+function draw(anim) {
+  const pass = (b) => filter === 'all' ? true : filter === 'read' ? marks[b.id] : !marks[b.id];
+  $('fA').classList.toggle('on', filter === 'all'); $('fR').classList.toggle('on', filter === 'read'); $('fU').classList.toggle('on', filter === 'unread');
+  $('fA').setAttribute('aria-pressed', filter === 'all'); $('fR').setAttribute('aria-pressed', filter === 'read'); $('fU').setAttribute('aria-pressed', filter === 'unread');
+  const rows = kids.map((c, k) => ({ c, k })).filter(({ c }) => pass(c)).map(({ c, k }) => ({ label: c.name, href: parts ? 'book.html?b=' + encodeURIComponent(c.id) : 'view.html?b=' + encodeURIComponent(c.id) + '&t=note', id: c.id, done: !!marks[c.id], n: parts ? k + 1 : letter(k), sy: sylNote(c) }));
+  $('lst').innerHTML = rows.length ? groupCardHtml({ title: par.cardTitle || (parts ? T('parts_t') : par.grp || ''), i: 0, anim: first, tip: T('bk_tick'), rows }) : emptyHtml('', kids.length ? T('bk_empty_f') : T('bk_empty'));
+  first = false; counts(anim); markTrunc($('lst'));
+}
+try {
+  if (!bid) throw new Error('no id');
+  const [ps, qs_] = await Promise.all([getDoc(doc(db, 'sub_buttons', bid)), getDocs(query(collection(db, 'sub_buttons'), where('parentId', '==', bid)))]);
+  if (!ps.exists() || ps.data().hidden) throw new Error('missing');
+  par = ps.data(); parts = topicMode(par) === 'parts';
+  document.title = par.name || 'তালিকা'; setTop(par.name || '', '', sylNote(par));
+  $('pBack').href = 'books.html?s=' + encodeURIComponent(par.sectionId || '');
+  kids = qs_.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.v === 3 && !x.hidden).sort((a, b) => (a.order || 0) - (b.order || 0));
+  app.innerHTML = `<div class="p-stack" id="lst"></div>`;
+  draw(false);
+  $('fA').onclick = () => { filter = 'all'; draw(false); };
+  $('fR').onclick = () => { filter = 'read'; draw(false); };
+  $('fU').onclick = () => { filter = 'unread'; draw(false); };
+  $('lst').addEventListener('click', async (e) => {
+    const c = e.target.closest('.p-chk'); if (!c) return;
+    e.preventDefault(); e.stopPropagation();
+    const id = c.dataset.chk, v = !marks[id]; marks[id] = v;
+    if (filter === 'all') { c.classList.toggle('on', v); c.setAttribute('aria-pressed', v); c.closest('.p-gr-row').classList.toggle('is-done', v); counts(true); }
+    else draw(true);
+    try { await setDoc(doc(db, 'users', user.uid), { doneBooks: { [id]: v } }, { merge: true }); } catch (er) { console.error(er); marks[id] = !v; draw(true); }
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => markTrunc($('lst')));
+  addEventListener('resize', () => markTrunc($('lst')));
+} catch (err) { console.error(err); app.innerHTML = msgHtml(T('load_err'), true); }
+</script>
+</body>
+</html>
